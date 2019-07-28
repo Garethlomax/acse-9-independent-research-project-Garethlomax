@@ -11,8 +11,8 @@ import cartopy.crs as ccrs
 
 #data = pd.read_csv("data/ged191.csv")
 
-#data = pd.read_csv("data/ged191.csv")
-data = pd.read_csv("data/PRIO-GRID Static Variables - 2019-07-26.csv")
+data = pd.read_csv("data/ged191.csv")
+#data = pd.read_csv("data/PRIO-GRID Static Variables - 2019-07-26.csv")
 test_array = np.zeros((360,720), dtype = np.int64)
 #plt.imshow(test_array)
 #x = data["xcoord"]
@@ -55,16 +55,16 @@ def index_return(ind, x_dim, y_dim):
 #
 #    def construct_array(self):
 
-#t1 = data.priogrid_gid
-#t2 = data.deaths_civilians
-t1 = data.gid
+t1 = data.priogrid_gid
+t2 = data.deaths_civilians
+#t1 = data.gid
 
 
 k = 0
 # now we iterate over the ensemble of events
 for i in range(len(t1)):
     ya, xa = index_return(t1[i]-1, 720, 360)
-    test_array[ya, xa] += 1#t2[i]
+    test_array[ya, xa] += t2[i]
     k+= 1
 print(k)
 
@@ -108,6 +108,43 @@ test_array = np.flipud(test_array)
 ax.coastlines()
 rp = ccrs.RotatedPole()
 ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 1, transform = ccrs.PlateCarree())
+
+north = 37.32
+south = -34.5115
+west = -17.3113
+east = 51.2752
+
+loc_list = [[north,west ],[north, east],[south, east], [south, west], [north, west]]
+loc_b = [north, north, south, south, north]
+loc_a = [west, east, east, west, west]
+ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
+
+def round(i):
+    """for rounding - always rounding down."""
+    j = int(i)
+    k = i - j
+    if k>0.5: # if above i.5 orrigionally
+        j += 0.5
+    return j
+
+# check lattitude and longitude
+def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
+    """returns grid location for given grid size"""
+    lat_dummy = np.arange(-90,90,0.5)
+    long_dummy = np.arange(-180,180,0.5)
+
+    round_long = round(long)
+    round_lat = round(lat)
+
+    long = np.where(long_dummy == round_long)
+    lat = np.where(lat_dummy == round_lat)
+    return long[0][0], lat[0][0]
+
+
+
+
+
+
 
 
 ##plt.contourf(test_array, vmin = 0, vmax = 1)
