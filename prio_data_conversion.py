@@ -107,7 +107,6 @@ test_array = np.flipud(test_array)
 
 ax.coastlines()
 rp = ccrs.RotatedPole()
-ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 1, transform = ccrs.PlateCarree())
 
 north = 37.32
 south = -34.5115
@@ -117,7 +116,7 @@ east = 51.2752
 loc_list = [[north,west ],[north, east],[south, east], [south, west], [north, west]]
 loc_b = [north, north, south, south, north]
 loc_a = [west, east, east, west, west]
-ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
+#ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
 
 def round(i):
     """for rounding - always rounding down."""
@@ -135,12 +134,27 @@ def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
 
     round_long = round(long)
     round_lat = round(lat)
+#    print(round_lat)
 
     long = np.where(long_dummy == round_long)
     lat = np.where(lat_dummy == round_lat)
-    return long[0][0], lat[0][0]
+    lat  = y_dim - lat[0][0]
+    long = x_dim - long[0][0]
+#    print(lat)
+    return long, lat
 
+left_corner = coord_to_grid(west, north)
+bottom_right = coord_to_grid(east, south)
 
+# putting bounds on the np array system.
+test_array[left_corner[1], left_corner[0]] = 10000
+test_array[bottom_right[1], bottom_right[0]] = 10000
+print(bottom_right[1])
+print(left_corner[1])
+print(bottom_right[0])
+print(left_corner[0])
+test_array[left_corner[1]:bottom_right[1], bottom_right[0]:left_corner[0]] = 10000
+ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 11000, transform = ccrs.PlateCarree())
 
 
 
