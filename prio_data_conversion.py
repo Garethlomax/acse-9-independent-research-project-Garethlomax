@@ -156,8 +156,10 @@ def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
 
     long = np.where(long_dummy == round_long)
     lat = np.where(lat_dummy == round_lat)
-    lat  = y_dim - lat[0][0]
-    long = x_dim - long[0][0]
+#    lat  = y_dim - lat[0][0]
+#    long = x_dim - long[0][0]
+    lat  = lat[0][0]
+    long = long[0][0]
 #    print(lat)
     return long, lat
 
@@ -174,7 +176,8 @@ bottom_right = coord_to_grid(east, south)
 #test_array[left_corner[1]:bottom_right[1], bottom_right[0]:left_corner[0]] = 10000
 ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 1, transform = ccrs.PlateCarree())
 
-
+"""important snippet for selecting africa"""
+#l[bottom_right[1]:left_corner[1],left_corner[0]:bottom_right[0]] = 100000
 
 
 

@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import h5py
+
 
 data_prio = pd.read_csv("data/PRIO-GRID Yearly Variables for 1946-2014 - 2019-07-26.csv")
 data_ucdp = pd.read_csv("data/ged191.csv")
@@ -184,7 +186,7 @@ def date_column(dataframe, baseline = [1989,1,1]):
     new_col = np.array([monotonic_date(string_date) for string_date in vals])
     dataframe["mon_month"] = new_col
 
-def h5py_conversion(dataframe, filename):
+def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
     # this is for saving the default 360:720 file to chop out of.
     # lazy loading saves the day
     # all day
@@ -206,6 +208,13 @@ def h5py_conversion(dataframe, filename):
     for key in key_list_prio:
         csv.write(key + "\n")
     csv.close()
+
+
+
+
+
+
+
 
 
 
