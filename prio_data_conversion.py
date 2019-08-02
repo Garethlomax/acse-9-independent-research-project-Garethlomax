@@ -12,6 +12,15 @@ import cartopy.crs as ccrs
 #data = pd.read_csv("data/ged191.csv")
 
 data = pd.read_csv("data/ged191.csv")
+
+north = 37.32
+south = -34.5115
+west = -17.3113
+east = 51.2752
+
+data = data[(data.latitude >= south) & (data.latitude <= north) & (data.longitude >= west) & (east >= data.longitude)]
+#data = dummy
+#data = data[data.region == "Africa"]
 #data = pd.read_csv("data/PRIO-GRID Static Variables - 2019-07-26.csv")
 test_array = np.zeros((360,720), dtype = np.int64)
 #plt.imshow(test_array)
@@ -58,13 +67,25 @@ def index_return(ind, x_dim, y_dim):
 t1 = data.priogrid_gid
 t2 = data.deaths_civilians
 #t1 = data.gid
+test_array_2 = np.zeros(360*720)
+for i in range(len(t1)):
+    j = t1.iloc[i] - 1
+    test_array_2[j] += t2.iloc[i]
+
+test_array_2 = test_array_2.reshape(360,720)
+
+#def construct_data_layer(dataframe, key, prio_key = "prio_gid"):
+
+#    array =
+
+
 
 
 k = 0
 # now we iterate over the ensemble of events
 for i in range(len(t1)):
-    ya, xa = index_return(t1[i]-1, 720, 360)
-    test_array[ya, xa] += t2[i]
+    ya, xa = index_return(t1.iloc[i]-1, 720, 360)
+    test_array[ya, xa] += t2.iloc[i]
     k+= 1
 print(k)
 
@@ -106,17 +127,14 @@ test_array = np.flipud(test_array)
 #plt.imshow(test_array)
 
 ax.coastlines()
-rp = ccrs.RotatedPole()
+#rp = ccrs.RotatedPole()
 
-north = 37.32
-south = -34.5115
-west = -17.3113
-east = 51.2752
+
 
 loc_list = [[north,west ],[north, east],[south, east], [south, west], [north, west]]
 loc_b = [north, north, south, south, north]
 loc_a = [west, east, east, west, west]
-#ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
+ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
 
 def round(i):
     """for rounding - always rounding down."""
@@ -147,14 +165,14 @@ left_corner = coord_to_grid(west, north)
 bottom_right = coord_to_grid(east, south)
 
 # putting bounds on the np array system.
-test_array[left_corner[1], left_corner[0]] = 10000
-test_array[bottom_right[1], bottom_right[0]] = 10000
-print(bottom_right[1])
-print(left_corner[1])
-print(bottom_right[0])
-print(left_corner[0])
-test_array[left_corner[1]:bottom_right[1], bottom_right[0]:left_corner[0]] = 10000
-ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 11000, transform = ccrs.PlateCarree())
+#test_array[left_corner[1], left_corner[0]] = 10000
+#test_array[bottom_right[1], bottom_right[0]] = 10000
+#print(bottom_right[1])
+#print(left_corner[1])
+#print(bottom_right[0])
+#print(left_corner[0])
+#test_array[left_corner[1]:bottom_right[1], bottom_right[0]:left_corner[0]] = 10000
+ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 1, transform = ccrs.PlateCarree())
 
 
 
@@ -166,6 +184,49 @@ ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 11000, transform = ccrs.PlateC
 ax.coastlines()
 ###
 plt.show()
+
+plt.figure()
+plt.imshow(test_array, vmin =0, vmax = 1)
+plt.show()
+
+def map_plot_func(test_array, vmin = 0 , vmax = 1):
+
+    north = 37.32
+    south = -34.5115
+    west = -17.3113
+    east = 51.2752
+    ax = plt.axes(projection=ccrs.PlateCarree())
+##
+###plt.contourf(y, x, z, 60,
+###             transform=ccrs.PlateCarree())
+##
+##
+#    test_array = np.fliplr(test_array)
+#    test_array = np.flipud(test_array)
+
+    y = np.arange(-90,90,0.5)
+    x = np.arange(-180,180,0.5)
+    xx, yy = np.meshgrid(x,y)
+
+#    ax = plt.axes(projection=ccrs.PlateCarree())
+##
+###plt.contourf(y, x, z, 60,
+###             transform=ccrs.PlateCarree())
+##
+##
+#    test_array = np.fliplr(test_array)
+#    test_array = np.flipud(test_array)
+
+    ax.coastlines()
+
+#    loc_list = [[north,west ],[north, east],[south, east], [south, west], [north, west]]
+    loc_b = [north, north, south, south, north]
+    loc_a = [west, east, east, west, west]
+    ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
+
+    ax.pcolormesh(xx, yy, test_array,vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree())
+
+    plt.show()
 
 
 
