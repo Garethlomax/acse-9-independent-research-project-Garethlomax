@@ -8,6 +8,8 @@ Created on Fri Aug  2 15:52:15 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import h5py
+
 test_raster = np.arange(0, 20, 1)
 #test_raster = np.zeros(())
 test_raster.resize((4,5))
@@ -74,6 +76,78 @@ def random_selection(image, i, j, chunk_size = 16):
 
     print(image[i_lower:i_upper,j_lower:j_upper])
 
+def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, debug = True):
+    if debug:
+        print("Image shape is:" , image.shape)
+
+
+    # decide if this is going to be h5py loaded.
+
+    # decide what sequence step is going to be like and how to return it
+
+    # image is seq, channels, height, width
+
+    # here we are using a seq length of 10. - could use 12 but atm we go for 10.
+
+    # sequence step is the step at which the TRUTH is being extracted. the predictor sequence
+    # is extracted from the 10 preceding steps. be careful to send in from i > 11
+    assert sequence_step > 10, ("This function selects the datapoints from this test set that contain"
+                                "a conflict event and then selects predictor data from the 10 preceding steps"
+                                " as a result i > 10 must be true")
+    # for sequence step, 0th layer - i.e fatalities
+    y, x = np.where(image[sequence_step][0] >= 1)
+
+    if debug:
+        print(x.shape)
+
+    truth_list = []
+    predictor_list = []
+
+    # re arange for loops for speed?
+    for i,j in zip(y, x): # now over sites where fatalities have occured
+        for _ in range(draws):
+            i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(i, j, chunk_size=chunk_size)
+
+            # now need to work out how to store these. how to stack ontop ect.
+            truth = image[sequence_step][0,i_lower:i_upper,j_lower:j_upper]
+            # check these dimensions
+            predictors = image[i-10:i, :,i_lower:i_upper,j_lower:j_upper]
+
+            truth_list.append(truth)
+            predictor_list.append(predictors)
+
+    # finally we combine the previous arrays.
+
+    return np.stack(predictor_list, axis= 0), np.stack(truth_list, axis = 0)
+
+
+def full_dataset_numpy(image, chunk_size = 16, draws = 5, debug = False):
+    # image is seq, channels, height, width
+    predictor_list = []
+    truth_list = []
+    for i in range(11, len(image)):
+        t1, t2 = random_grid_selection(image, i)
+        predictor_list.append(t1)
+        truth_list.append(t2)
+
+    truth_np = np.concatenate(truth_list, axis = 0)
+    predictor_np = np.concatenate(predictor_list, axis =0)
+    return predictor_np, truth_np
+
+def quick_dataset(data, name):
+    f = h5py.File(name + ".hdf5", "w")
+    f.create_dataset("main", data = data)
+#    f.create_dataset("truth", data = truth)
+    f.close()
+
+
+
+
+#data = pd.read_csv("data/ged191.csv")
+
+def debug_func1(dataframe, month):
+    a = dataframe[dataframe.mon_month == month]
+    print(len(a[a.best >0]))
 
 
 
@@ -85,7 +159,7 @@ def random_selection(image, i, j, chunk_size = 16):
 
 
 
-raster_test(test_raster, 3)
+#raster_test(test_raster, 3)
 
 #def
 

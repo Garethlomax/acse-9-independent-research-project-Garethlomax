@@ -64,7 +64,7 @@ def monotonic_date(date, baseline = [1989, 1, 1]):
 
 
 
-def construct_layer(dataframe, key, prio_key = "gid"):
+def construct_layer(dataframe, key, prio_key = "gid", debug = False):
     # returns 360 720 grid layer for a given parameter
     # should be given for one parameter per year.
     array = np.zeros(360*720)
