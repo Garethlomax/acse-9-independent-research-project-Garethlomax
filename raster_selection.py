@@ -151,6 +151,28 @@ def debug_func1(dataframe, month):
 
 
 
+def full_dataset_h5py(image, filename, chunk_size = 16, draws = 5, debug = False):
+    """ dataset is too large to combine in 12gb of ram - need to combine in h5py
+    array. i.e lazy saving as well as lazy loading"""
+
+    f = h5py.File(filename + ".hdf5", 'w')
+    for i in range(11, len(image)):
+        t1, t2 = random_grid_selection(image, i)
+        if i == 11:
+            # creat h5py file at first step.
+            f.create_dataset('predictor', data= t1, maxshape=(None,)) # compression="gzip", chunks=True, taken out
+            f.create_dataset("truth", data= t2, maxshape=(None,))
+
+        else:
+            f["predictor"].resize((f["predictor"].shape[0] + t1.shape[0]), axis = 0) # expand dataset
+            f["truth"].resize((f["truth"].shape[0] + t2.shape[0]), axis = 0)
+
+            f["predictor"][-t1.shape[0]:] = t1 # place new data in expanded dataset
+            f["truth"][-t2.shape[0]:] = t2
+
+    f.close()
+
+
 
 
 
