@@ -186,6 +186,16 @@ def date_column(dataframe, baseline = [1989,1,1]):
     new_col = np.array([monotonic_date(string_date) for string_date in vals])
     dataframe["mon_month"] = new_col
 
+
+def binary_event_column(dataframe):
+    """ as it is hard to encode categorical information about battles when
+    battle deaths = 0, we then encode a binary - 0, 1 layer pertaining to
+    whether an event took place"""
+    new_col = np.ones(len(dataframe))
+    dataframe["binary_event"] = new_col
+
+
+
 def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
     # this is for saving the default 360:720 file to chop out of.
     # lazy loading saves the day
