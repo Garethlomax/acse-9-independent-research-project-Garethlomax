@@ -194,6 +194,12 @@ def binary_event_column(dataframe):
     new_col = np.ones(len(dataframe))
     dataframe["binary_event"] = new_col
 
+def nan_to_one(dataframe, key):
+    """takes column from dataframe"""
+    dataframe[key] = dataframe[key].fillna(0)
+
+
+
 
 
 def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
@@ -220,6 +226,10 @@ def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
     csv.close()
 
 
+key_list_prio = ["gcp_ppp", "petroleum_y","drug_y", "prec_gpcp"] # not temp - needs better imputation
+# excluded also useful - talk to nils about exclusion.
+
+# no mountainous regions so far
 
 
 
