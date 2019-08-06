@@ -53,7 +53,7 @@ clustering = AgglomerativeClustering(n_clusters = 20).fit(X)
 mshift = MeanShift(cluster_all= False, min_bin_freq=5).fit(X)
 af = AffinityPropagation(damping= 0.8).fit(X)
 #ax.plot(x, y, '.',c = clustering.labels_,transform = ccrs.PlateCarree() )
-clf = LocalOutlierFactor(n_neighbors=20, contamination= 0.05)
+clf = LocalOutlierFactor(n_neighbors=5, contamination= 0.05)
 
 #ax = plt.axes(projection=ccrs.PlateCarree())
 #

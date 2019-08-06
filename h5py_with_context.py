@@ -19,7 +19,7 @@ with h5py.File("simple_attribute_test4.hdf5",'w') as t:
     t["main"].attrs.create("key_prio", np.string_(key_list))
 
 
-def find_avg_lazy_load(filename, key_list):
+def find_avg_lazy_load(filename):
     # file name is name of hdf5 file
     data = h5py.File(filename, 'r')
     predictor = data["predictor"]
