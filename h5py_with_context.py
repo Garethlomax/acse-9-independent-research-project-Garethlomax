@@ -15,7 +15,7 @@ test_dat = np.zeros(10)
 with h5py.File("simple_attribute_test4.hdf5",'w') as t:
 
     t.create_dataset("main", data = test_dat)
-    key_list = [u"gcp_ppp", u"petroleum_y",u"drug_y", u"prec_gpcp"]
+    key_list = [u"petroleum_y",u"drug_y", u"prec_gpcp"]
     t["main"].attrs.create("key_prio", np.string_(key_list))
 
 
@@ -30,6 +30,8 @@ def find_avg_lazy_load(filename, key_list):
         avg = np.avg(predictor[:,:,i])
         std = np.avg(predictor[:,:,i])
     return avg, std
+
+
 
 
 
