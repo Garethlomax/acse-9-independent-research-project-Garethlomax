@@ -54,7 +54,7 @@ def test_nan_to_one():
     dummy_dataframe = pd.DataFrame()
     dummy_dataframe["dummy"] = [np.NaN]
     cf.nan_to_one(dummy_dataframe, "dummy")
-    assert dummy_dataframe["dummy"] == 0, "failed"
+    assert dummy_dataframe["dummy"][0] == 0, "failed"
 
 def test_random_pixel_bounds():
     i_low, i_high, j_low, j_high = cf.random_pixel_bounds(0,0,16)
