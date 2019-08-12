@@ -53,7 +53,7 @@ def test_binary_event_column():
 def test_nan_to_one():
     dummy_dataframe = pd.DataFrame()
     dummy_dataframe["dummy"] = [np.NaN]
-    cf.nan_to_one(dummy_dataframe)
+    cf.nan_to_one(dummy_dataframe, "dummy")
     assert dummy_dataframe["dummy"] == 0, "failed"
 
 def test_random_pixel_bounds():

@@ -7,6 +7,7 @@ Created on Sun Aug 11 21:14:32 2019
 
 import numpy as np
 import pandas as pd
+import random
 
 def date_to_int_list(date):
     # date is in format yyyy-mm-dd
