@@ -840,8 +840,8 @@ def validate(model, dataloader, loss_func = nn.MSELoss()):
         with torch.no_grad(): # no longer have to specify tensors
             # as volatile = True. as of modern pytorch use torch.no_grad.
 
-            x.to(device) # send to cuda.
-            y.to(device)
+            x=x.to(device) # send to cuda.
+            y=y.to(device)
             prediction = model(x)
 
             loss = loss_func(prediction[:,0,0], y)
@@ -1040,7 +1040,7 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
     # model test - put it together.
     # now we train the model
 
-    train, valid = initialise_dataset_HDF5_full('data_prio_run_test5.hdf5', valid_frac = 0.1, dataset_length = 93620,avg = avg, std = std, application_boolean=application_boolean)
+    train, valid = initialise_dataset_HDF5_full('data_min_events_25.hdf5', valid_frac = 0.1, dataset_length = 52109,avg = avg, std = std, application_boolean=application_boolean)
 
 
 
@@ -1057,7 +1057,7 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
     f.close()
 
     train_loader = DataLoader(train, batch_size = batch_size, shuffle = True) # implement moving MNIST data input
-    valid_loader = DataLoader(valid, batch_size = 1000, shuffle = False) # implement moving MNIST
+    valid_loader = DataLoader(valid, batch_size = 2000, shuffle = False) # implement moving MNIST
 
     for epoch in range(epochs):
 
@@ -1205,12 +1205,13 @@ def test_image_save(model, train_loader, name, sample = 7):
 # %pwd
 # %cd /content/drive/My\ Drive/masters_project/data
 
-b = nn.MSELoss()
+#b = nn.MSELoss()
+b = nn.BCEWithLogitsLoss()
 
-avg = np.load("dset5_avg.npy")
-std = np.load("dset5_std.npy")
+avg = np.load("min_event_25_avg.npy")
+std = np.load("min_event_25_std.npy")
 # changed below
 apbln = [0,1,0,0,1] # think this is correct
 
-wrapper_full("valid_test", 10, structure, b, avg, std, apbln, lr = 0.005, epochs = 1, batch_size = 200)
+wrapper_full("valid_test", 10, structure, b, avg, std, apbln, lr = 0.005, epochs = 200, batch_size = 200)
 

@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.cm as cm
 
 #data = pd.read_csv("data/ged191.csv")
 
@@ -174,7 +176,8 @@ bottom_right = coord_to_grid(east, south)
 #print(bottom_right[0])
 #print(left_corner[0])
 #test_array[left_corner[1]:bottom_right[1], bottom_right[0]:left_corner[0]] = 10000
-ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 1, transform = ccrs.PlateCarree())
+cmap = cm.Oranges
+ax.pcolormesh(xx, yy, test_array,vmin = 0, vmax = 1, transform = ccrs.PlateCarree(),cmap = cmap)
 
 """important snippet for selecting africa"""
 #l[bottom_right[1]:left_corner[1],left_corner[0]:bottom_right[0]] = 100000
@@ -192,12 +195,13 @@ plt.figure()
 plt.imshow(test_array, vmin =0, vmax = 1)
 plt.show()
 
-def map_plot_func(test_array, vmin = 0 , vmax = 1):
+def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_colour = 'black'):
 
     north = 37.32
     south = -34.5115
     west = -17.3113
     east = 51.2752
+    plt.figure()
     ax = plt.axes(projection=ccrs.PlateCarree())
 ##
 ###plt.contourf(y, x, z, 60,
@@ -213,21 +217,29 @@ def map_plot_func(test_array, vmin = 0 , vmax = 1):
 
 #    ax = plt.axes(projection=ccrs.PlateCarree())
 ##
-###plt.contourf(y, x, z, 60,
+###plt.contourf(y, x, z, 60,map
 ###             transform=ccrs.PlateCarree())
 ##
 ##
 #    test_array = np.fliplr(test_array)
 #    test_array = np.flipud(test_array)
 
-    ax.coastlines()
-
+    ax.coastlines(color = border_colour)
+#    states_provinces = cfeature.NaturalEarthFeature(
+#        category='cultural',
+#        name='admin_1_states_provinces_lines',
+#        scale='50m',
+#        facecolor='none')
+    ax.add_feature(cfeature.BORDERS, edgecolor='black')
+#    ax.
 #    loc_list = [[north,west ],[north, east],[south, east], [south, west], [north, west]]
     loc_b = [north, north, south, south, north]
     loc_a = [west, east, east, west, west]
     ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
 
-    ax.pcolormesh(xx, yy, test_array,vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree())
+    cmap = cm.get_cmap(name = colour)
+
+    ax.pcolormesh(xx, yy, test_array,vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree(), cmap = cmap)
 
     plt.show()
 
