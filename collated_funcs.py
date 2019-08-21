@@ -8,6 +8,20 @@ Created on Sun Aug 11 21:14:32 2019
 import numpy as np
 import pandas as pd
 import random
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.cm as cm
+import h5py
+
+
+def mod_dif(module_1, module_2):
+    print(set(dir(module_1)) - set(dir(module_2)))
+
+
+
+
+
 
 def date_to_int_list(date):
     # date is in format yyyy-mm-dd
@@ -337,3 +351,106 @@ def binary_event_column(dataframe):
 def nan_to_one(dataframe, key):
     """takes column from dataframe"""
     dataframe[key] = dataframe[key].fillna(0)
+
+
+
+def index_return(ind, x_dim, y_dim):
+    """just for converting indices quickly"""
+    x_out = ind % x_dim
+    y_out = int(ind / x_dim)
+    return y_out, x_out
+
+def round(i):
+    """for rounding - always rounding down."""
+    j = int(i)
+    k = i - j
+    if k>0.5: # if above i.5 orrigionally
+        j += 0.5
+    return j
+
+def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
+    """returns grid location for given grid size"""
+    lat_dummy = np.arange(-90,90,0.5)
+    long_dummy = np.arange(-180,180,0.5)
+
+    round_long = round(long)
+    round_lat = round(lat)
+#    print(round_lat)
+
+    long = np.where(long_dummy == round_long)
+    lat = np.where(lat_dummy == round_lat)
+#    lat  = y_dim - lat[0][0]
+#    long = x_dim - long[0][0]
+    lat  = lat[0][0]
+    long = long[0][0]
+#    print(lat)
+    return long, lat
+
+def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_colour = 'black'):
+
+    north = 37.32
+    south = -34.5115
+    west = -17.3113
+    east = 51.2752
+    plt.figure()
+    ax = plt.axes(projection=ccrs.PlateCarree())
+##
+###plt.contourf(y, x, z, 60,
+###             transform=ccrs.PlateCarree())
+##
+##
+#    test_array = np.fliplr(test_array)
+#    test_array = np.flipud(test_array)
+
+    y = np.arange(-90,90,0.5)
+    x = np.arange(-180,180,0.5)
+    xx, yy = np.meshgrid(x,y)
+
+#    ax = plt.axes(projection=ccrs.PlateCarree())
+##
+###plt.contourf(y, x, z, 60,map
+###             transform=ccrs.PlateCarree())
+##
+##
+#    test_array = np.fliplr(test_array)
+#    test_array = np.flipud(test_array)
+
+    ax.coastlines(color = border_colour)
+#    states_provinces = cfeature.NaturalEarthFeature(
+#        category='cultural',
+#        name='admin_1_states_provinces_lines',
+#        scale='50m',
+#        facecolor='none')
+    ax.add_feature(cfeature.BORDERS, edgecolor='black')
+#    ax.
+#    loc_list = [[north,west ],[north, east],[south, east], [south, west], [north, west]]
+    loc_b = [north, north, south, south, north]
+    loc_a = [west, east, east, west, west]
+    ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
+
+    cmap = cm.get_cmap(name = colour)
+
+    ax.pcolormesh(xx, yy, test_array,vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree(), cmap = cmap)
+
+    plt.show()
+
+def full_dataset_h5py(image, filename, chunk_size = 16, draws = 5, debug = False):
+    """ dataset is too large to combine in 12gb of ram - need to combine in h5py
+    array. i.e lazy saving as well as lazy loading"""
+
+    f = h5py.File(filename + ".hdf5", 'w')
+    for i in range(11, len(image)):
+        t1, t2 = random_grid_selection(image, i)
+        if i == 11:
+            # creat h5py file at first step.
+            f.create_dataset('predictor', data= t1, maxshape=(None,)) # compression="gzip", chunks=True, taken out
+            f.create_dataset("truth", data= t2, maxshape=(None,))
+
+        else:
+            f["predictor"].resize((f["predictor"].shape[0] + t1.shape[0]), axis = 0) # expand dataset
+            f["truth"].resize((f["truth"].shape[0] + t2.shape[0]), axis = 0)
+
+            f["predictor"][-t1.shape[0]:] = t1 # place new data in expanded dataset
+            f["truth"][-t2.shape[0]:] = t2
+
+    f.close()
