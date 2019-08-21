@@ -10,9 +10,7 @@ import matplotlib.pyplot as plt
 import random
 import h5py
 
-test_raster = np.arange(0, 20, 1)
-#test_raster = np.zeros(())
-test_raster.resize((4,5))
+
 
 """SAVE THIS FOR JUSTIFYING SELECTION CRITERIA"""
 

@@ -18,6 +18,21 @@ import h5py
 def mod_dif(module_1, module_2):
     print(set(dir(module_1)) - set(dir(module_2)))
 
+def mod_dif_full(m1, m2, m3):
+    m1 = set(dir(m1))
+    m2 = set(dir(m2))
+    m3 = set(dir(m3))
+    print((m1 - m2) - m3)
+
+
+def lists_overlap(a, b):
+    for i in a:
+        if i in b:
+            print(i)
+
+def mod_overlap(module_1, module_2):
+    lists_overlap(dir(module_1), dir(module_2))
+
 
 
 
