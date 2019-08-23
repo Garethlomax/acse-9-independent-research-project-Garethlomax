@@ -80,18 +80,63 @@ def set_seed(seed):
 
 
 class LSTMunit(nn.Module):
+    """Base unit for an overall convLSTM structure.
+
+    Implementation of ConvLSTM in Pythorch. Used as a worker class for
+    LSTMmain. Performs Full ConvLSTM Convolution as introduced in XXXX.
+    Automatically uses a padding to ensure output image is of same height
+    and width as input.
+    Each cell takes an input the data at the current timestep Xt, and a hidden
+    representation from the previous timestep Ht-1
+    Each cell outputs Ht
+
+    Attributes
+    ----------
+    input_channels: int
+        The number of channels in the input image tensor.
+    output_channels: int
+        The number of channels in the output image tensor following
+        convoluton.
+    kernel_size: int
+        The size of the kernel used in the convolutional opertation.
+    padding: int
+        The padding in each of the convolutional operations. Automatically
+        calculated so each convolution maintains input image dimensions.
+    stride: int
+        The stride of input convolutions.
+    filter_name_list: str
+        List of identifying filter names as used in equations from XXXX.
+    conv_dict: dict
+        nn.Module Dictionary of pytorch convolution modules, with parameters
+        specified by attributes listed above. Stored in Module Dict to make
+        accessible to pytorch autograd. See pytorch for explanation of
+        computational tree tracking in pytorch.
+    shape: int, list
+        List of dimensions of image input.
+    Wco: double, tensor
+        Pytorch parameter tracked tensor for use in hammard operation in
+        LSTM logic gates. Is a pytorch parameter to allow computational
+        tree tracking.
+    Wcf: double, tensor
+        Pytorch parameter tracked tensor for use in hammard operation in
+        LSTM logic gates. Is a pytorch parameter to allow computational
+        tree tracking.
+    Wci: double, tensor
+        Pytorch parameter tracked tensor for use in hammard operation in
+        LSTM logic gates. Is a pytorch parameter to allow computational
+        tree tracking.
+    tanh: class
+        Pytorch tanh class.
+    sig: class
+        Pytorch sigmoid class.
+
+
+    """
     def __init__(self, input_channel_no, hidden_channels_no, kernel_size, stride = 1):
+        """Constructor method for LSTM"""
         super(LSTMunit, self).__init__()
-        """base unit for an overall convLSTM structure. convLSTM exists in keras but
-        not pytorch. LSTMunit repersents one cell in an overall convLSTM encoder decoder format
-        the structure of convLSTMs lend themselves well to compartmentalising the LSTM
-        cells.
 
-        Each cell takes an input the data at the current timestep Xt, and a hidden
-        representation from the previous timestep Ht-1
 
-        Each cell outputs Ht
-        """
 
 
         self.input_channels = input_channel_no
@@ -166,19 +211,43 @@ class LSTMunit(nn.Module):
 
 #     (1, 6, kernel_size=5, padding=2, stride=1).double()
     def forward(self, x, h, c):
+        """Pytorch module forward method.
+
+        Calculates a forward pass of the LSTMunit. Takes in the sequence input
+        at a timestep, and previous hidden states and cell memories and returns
+        the new hidden state and cell memory, as according to the outline in
+        XXXX.
+
+        Parameters
+        ----------
+
+        x: tensor, double
+            Pytorch tensor of dimensions shape, as specified in class constructor
+            tensor should be 3 dimensional tensor of dimensions (input channels,
+            height, width). x is the image at a single step of an image sequence
+        h: tensor, double
+            Pytorch tensor of dimensions (output channels, height, width). h is
+            the output hidden state from the last step in the LSTM sequence
+        c: tensor, double
+            Pytorch tensor of dimensions (output channels, height, width). h is
+            the output cell memory state from the last step in the LSTM sequence
+
+        Returns
+        -------
+
+        h_t: tensor, double
+            Tensor of the new hidden state for the current timestep, Pytorch
+            tensor of dimensions (output channels, height, width)
+        c_t: tensor, double
+            Tensor of the new cell memory state for the current tinestep, Pytorch
+            tensor of dimensions (output channels, height, width)
+        """
+
+
         """ put the various nets in here - instanciate the other convolutions."""
         """TODO: SORT BIAS OUT HERE"""
         """TODO: PUT THIS IN SELECTOR FUNCTION? SO ONLY PUT IN WXI ECT TO MAKE EASIER TO DEBUG?"""
-#         print("size of x is:")
-#         print(x.shape)
-        # ERROR IS IN LINE 20
-        #print(self.conv_dict['Wxi'](x).shape)
-#         print("X:")
-#         print(x.is_cuda)
-#         print("H:")
-#         print(h.is_cuda)
-#         print("C")
-#         print(c.is_cuda)
+
 
         i_t = self.sig(self.conv_dict['Wxi'](x) + self.conv_dict['Whi'](h) + self.Wci * c)
         f_t = self.sig(self.conv_dict['Wxf'](x) + self.conv_dict['Whf'](h) + self.Wcf * c)
