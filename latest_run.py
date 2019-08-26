@@ -133,7 +133,19 @@ class LSTMunit(nn.Module):
 
     """
     def __init__(self, input_channel_no, hidden_channels_no, kernel_size, stride = 1):
-        """Constructor method for LSTM"""
+        """Constructor method for LSTM
+
+        Parameters
+        ----------
+        input_channel_no: int
+            Number of channels of the input image in the LSTM unit
+        hidden_channel_no: int
+            The number of hidden channels of the image output by the unit
+        kernel_size: int
+            The dimension of the square convolutional kernel used in the forward
+            method
+        stride: int
+            depractated"""
         super(LSTMunit, self).__init__()
 
 
@@ -274,6 +286,24 @@ AS INPUT.
 """ SEQUENCE, BATCH SIZE, LAYERS, HEIGHT, WIDTH"""
 
 class LSTMmain(nn.Module):
+    """Full ConvLSTM module
+
+    Full implementation of a ConvLSTM, for use alone or as part of an encoder
+    decoder model. The class initialises and iterates over collections of ConvLSTM
+    units.
+
+    Attributes
+    ----------
+
+    input_channel_no: int
+        The number of input channels in the input image sequence
+    hidden_channel_no: int
+        The number of channels in the output image sequence
+    kernel_size: int
+        The size of the kernel used in the convolutional opertation.
+
+
+    """
 
 
     """ collection of units to form encoder/ decoder branches - decide which are which
