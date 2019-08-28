@@ -10,10 +10,12 @@ Created on Sun Aug 11 21:15:03 2019
  Pytest requires the test method names to start with test.
  All other method names will be ignored even if we explicitly ask to run those methods."""
 
-import collated_funcs as cf
+import hpc_construct as cf
+import latest_run as lr
 import pandas as pd
 import numpy as np
 import random
+import h5py
 
 def test_date_to_int_list():
     date = "2019-10-10"
@@ -61,6 +63,77 @@ def test_random_pixel_bounds():
     assert (abs(i_low)+ abs(i_high))==16, "i dimension wrong"
     assert (abs(j_low)+ abs(j_high))==16, "j dimension wrong"
 
+#def test_LSTMmain():
+#    """Test of LSTMmain
+#    """
+
+#    shape = [2,4,1,8,8]
+    #    first we have dummy test in here
+    # of example module
+
+
+def test_module_diff():
+    """Test of differentiability of module
+
+    Base other module tests on this.
+    """
+    t1 = nn.Conv2d(1,2,3).double()
+    inp = torch.zeros([1,1,9,9], dtype = torch.double, requires_grad = True)
+    t2 = t1(inp)
+    res = torch.autograd.gradcheck(t1, (inp,), eps=1e-4, raise_exception=True)
+    print(res)
+
+def test_LSTMmain_initial():
+    """Test of differentiability of LSTMmain - direct integration test with LSTMunit
+    """
+    shape = [2,4,1,8,8]
+    test_input_tensor = torch.zeros(shape, dtype = torch.double, requires_grad = True)
+
+    test2 = lr.LSTMmain(shape, 1, 3, 5, [1], test_input = [1,2], debug = False).double()
+
+    ans, _ = test2(x, copy_in = False, copy_out = [False, False, False])
+
+    res = torch.autograd.gradcheck(test2, (ans,), eps=1e-4, raise_exception=True)
+
+
+def test_random_grid_selection():
+    """Test of random_grid_selection function
+    """
+    # dummy input image
+    dummy_image = np.zeros([20,1, 360, 720])
+    dummy_image[:,:,100,100] = 1
+
+    # set value to pick out.
+    pred_list, truth_list = cf.random_grid_selection(dummy_image,19, draws = 5, debug = False)
+    assert ((len(pred_list) == 5) and (len(truth_list) == 5)), "not providing correct number of image samples"
+    assert (np.sum(truth_list) == 5), "as one event per layer to extract from, we expect each truth image to contain 1 event"
+
+def test_full_dataset_h5py():
+    """Test of full dataset creation
+
+    Dummy dataset is saved then reloaded to test h5py testing.
+    """
+    filename = "test_dataset"
+    dummy_image = np.zeros([20,1, 360, 720])
+    dummy_image[:,:,100,100] = 1
+
+    cf.full_dataset_h5py(dummy_image, filename, key_list_prio = "prio_test", key_list_ucdp = "ucdp_test", min_events=0)
+
+    with h5py.File(filename + ".hdf5", 'r') as f:
+        assert len(f["truth"]) == 45, "dataset contains wrong number of samples"
+        assert f["truth"].attrs['key_ucdp'] == b'ucdp_test', "meta data not saving"
+#        assert
+
+def test_find_avg_lazy_load():
+    """Test of full dataset creation
+
+    Uses test dataset produced in the previous test. As this is small enough to
+    fit into memory we can find the averages and verify when too large.
+    """
+    f = h5py.File("test_dataset.hdf5", 'r')
+    avg, std = cf.find_avg_lazy_load(f)
+    assert avg[0] == np.average(f['predictor'])
+    assert std[0] == np.std(f['predictor'])
 
 
 

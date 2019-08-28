@@ -58,6 +58,8 @@ def construct_layer(dataframe, key, prio_key = "gid", debug = False):
 
     return array
 
+
+""" UPDATE THIS FUNCTION"""
 def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, key_list_ucdp, start = [1989, 1,1], stop = [2014,1,1]):
     """commented out the stop and start"""
     #stop  = '2014-01-01'
@@ -708,29 +710,73 @@ def data_set_analysis(dataset):
 #f
 
 """# AVERAGING FUNCTION"""
+def chunked_average():
+    l = np.random.randint(0, 2, size = [123,10,10])
+    a = 0
+    b = 0
+    div = 2
+    for i in range(int(len(l)/div)):
+        a += np.sum(l[i *div : (i+1)*div])
+        b += np.sum(l[i *div : (i+1)*div] * l[i *div : (i+1)*div])
 
-def find_avg_lazy_load(data):
+
+    a += np.sum(l[(i +1) * div: len(l)])
+    b += np.sum(l[(i +1) * div: len(l)] * l[(i +1) * div: len(l)])
+#    print(a /( 123 * 10 * 10))
+    a /= np.prod(l.shape)
+    print(a)
+    print(np.average(l))
+    b /= np.prod(l.shape)
+    print(np.sqrt(b - a**2))
+    print(np.std(l))
+
+
+
+def find_avg_lazy_load(data, div = 10000):
     # file name is name of hdf5 file
 #     data = h5py.File(filename, 'r')
     predictor = data["predictor"]
     channel_num = predictor.shape[2]
     avg = np.zeros(channel_num)
     std = np.zeros_like(avg)
+
+
     for i in range(channel_num):
         # batching as cant fit into ram
 
         batch_avg = 0
         batch_std = 0
-        for j in range(5):
-            batch_avg += np.average(predictor[j * 10000: (j+1)*10000,:,i])
-            print(batch_avg)
-            batch_std += np.std(predictor[j * 10000: (j+1)*10000,:,i])
+        for j in range(int(len(predictor)/div)):
 
-        batch_avg += np.average(predictor[50000: 52109,:,i])
-        batch_std += np.std(predictor[50000: 52109,:,i])
 
-        batch_avg /= 6
-        batch_std /= 6
+#            a += np.sum(l[i *div : (i+1)*div])
+#            b += np.sum(l[i *div : (i+1)*div] * l[i *div : (i+1)*div])
+
+
+
+            batch_avg += np.sum(predictor[j * div: (j+1)*div,:,i])
+
+            batch_std += np.sum(predictor[j * div: (j+1)*div,:,i] * predictor[j * div: (j+1)*div,:,i])
+
+
+
+
+        batch_avg += np.sum(predictor[int(len(predictor)/div)*div: len(predictor),:,i])
+        batch_std += np.sum(predictor[int(len(predictor)/div)*div: len(predictor),:,i]*predictor[int(len(predictor)/div)*div: len(predictor),:,i])
+#
+#a /= np.prod(l.shape)
+#    print(a)
+#    print(np.average(l))
+#    b /= np.prod(l.shape)
+#    print(np.sqrt(b - a**2))
+#    print(np.std(l))
+#
+        sing_chan_shape = np.array(predictor.shape)
+        sing_chan_shape[2] = 1
+        batch_avg /= np.prod(sing_chan_shape)
+        batch_std /= np.prod(sing_chan_shape)
+
+        batch_std = np.sqrt(batch_std - batch_avg**2)
 
         avg[i] = batch_avg
         std[i] = batch_std
@@ -837,6 +883,9 @@ def round(i):
     if k>0.5: # if above i.5 orrigionally
         j += 0.5
     return j
+
+
+
 
 #f['predictor'].shape
 #

@@ -8,7 +8,11 @@ Original file is located at
 
 #imports
 """
+"""
 
+TODO: SORT OUT SHAPE BEING DEFINED IN CLASS.
+
+"""
 
 
 # all torch imports
@@ -159,51 +163,31 @@ class LSTMunit(nn.Module):
 
         self.padding = (int((self.kernel_size - 1) / 2 ), int((self.kernel_size - 1) / 2 ))#to ensure output image same dims as input
         # as in conv nowcasting - see references
-        self.stride = stride # for same reasons as above
-
-        # need convolutions, cells, tanh, sigmoid?
-        # need input size for the lstm - on size of layers.
-        # cannot do this because of the modules not being registered when stored in a list
-        # can if we convert it to a parameter dict
-
-        # list of names of filter to put in dictionary.
-        # some of these are not convolutions
+        self.stride = stride # for same reasons as above stride must be 1.
         """TODO: CHANGE THIS LAYOUT OF CONVOLUTIONAL LAYERS. """
-
-
-
-        self.filter_name_list = ['Wxi', 'Wxf', 'Wxc', 'Wxo','Whi', 'Whf', 'Whc', 'Who']
-
         """ TODO : DEAL WITH BIAS HERE. """
         """ TODO: CAN INCLUDE BIAS IN ONE OF THE CONVOLUTIONS BUT NOT ALL OF THEM - OR COULD INCLUDE IN ALL? """
-
-        # list of concolution instances for each lstm cell step
-       #  nn.Conv2d(1, 48, kernel_size=3, stride=1, padding=0),
-        self.conv_list = [nn.Conv2d(self.input_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = False).cuda() for i in range(4)]
-#         self.conv_list = [nn.Conv2d(self.input_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = False) for i in range(4)]
-
-#         self.conv_list = self.conv_list + [(nn.Conv2d(self.output_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = True)).double() for i in range(4)]
-
-        self.conv_list = self.conv_list + [(nn.Conv2d(self.output_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = True).cuda()).double() for i in range(4)]
-#         self.conv_list = nn.ModuleList(self.conv_list)
-        # stores nicely in dictionary for compact readability.
-        # most ML code is uncommented and utterly unreadable. Here we try to avoid this
-        self.conv_dict = nn.ModuleDict(zip(self.filter_name_list, self.conv_list))
-
-        # may be able to combine all the filters and combine all the things to be convolved - as long as there is no cross layer convolution
-        # technically the filter will be the same? - check this later.
-
-        # set up W_co, W_cf, W_co as variables.
         """ TODO: decide whether this should be put into function. """
-
-
         """TODO: put correct dimensions of tensor in shape"""
-
-        # of dimensions seq length, hidden layers, height, width
         """TODO: DEFINE THESE SYMBOLS. """
         """TODO: PUT THIS IN CONSTRUCTOR."""
+        self.filter_name_list = ['Wxi', 'Wxf', 'Wxc', 'Wxo','Whi', 'Whf', 'Whc', 'Who']
+        # list of concolution instances for each lstm cell step
+        # Filters with Wx_ are unbiased, filters with Wh_ are biased.
+        # Stored in module dict to track as parameter.
+        self.conv_list = [nn.Conv2d(self.input_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = False).cuda() for i in range(4)]
+        self.conv_list = self.conv_list + [(nn.Conv2d(self.output_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = True).cuda()).double() for i in range(4)]
+        self.conv_dict = nn.ModuleDict(zip(self.filter_name_list, self.conv_list))
+
+#         self.conv_list = [nn.Conv2d(self.input_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = False) for i in range(4)]
+#         self.conv_list = self.conv_list + [(nn.Conv2d(self.output_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = True)).double() for i in range(4)]
+#         self.conv_list = nn.ModuleList(self.conv_list)
+
+        # of dimensions seq length, hidden layers, height, width
         shape = [1, self.output_channels, 16, 16]
 
+        # Wco, Wcf, Wci defined as tensors as are multiplicative, not convolutions
+        # Tracked as a parameter to allow differentiability.
         self.Wco = nn.Parameter((torch.zeros(shape).double()).cuda(), requires_grad = True)
         self.Wcf = nn.Parameter((torch.zeros(shape).double()).cuda(), requires_grad = True)
         self.Wci = nn.Parameter((torch.zeros(shape).double()).cuda(), requires_grad = True)
@@ -255,22 +239,15 @@ class LSTMunit(nn.Module):
             tensor of dimensions (output channels, height, width)
         """
 
-
-        """ put the various nets in here - instanciate the other convolutions."""
-        """TODO: SORT BIAS OUT HERE"""
-        """TODO: PUT THIS IN SELECTOR FUNCTION? SO ONLY PUT IN WXI ECT TO MAKE EASIER TO DEBUG?"""
-
-
+        # Calculates as in Nowcasting Paper. see url for explanation
         i_t = self.sig(self.conv_dict['Wxi'](x) + self.conv_dict['Whi'](h) + self.Wci * c)
         f_t = self.sig(self.conv_dict['Wxf'](x) + self.conv_dict['Whf'](h) + self.Wcf * c)
         c_t = f_t * c + i_t * self.tanh(self.conv_dict['Wxc'](x) + self.conv_dict['Whc'](h))
         o_t = self.sig(self.conv_dict['Wxo'](x) + self.conv_dict['Who'](h) + self.Wco * c_t)
         h_t = o_t * self.tanh(c_t)
 
-        return h_t, c_t
 
-    def copy_in(self):
-        """dummy function to copy in the internals of the output in the various architectures i.e encoder decoder format"""
+        return h_t, c_t
 
 """# lstm full unit"""
 
