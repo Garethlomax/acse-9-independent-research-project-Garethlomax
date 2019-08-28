@@ -643,6 +643,37 @@ class LSTMencdec_onestep(nn.Module):
     """
 
     def __init__(self, structure, input_channels, kernel_size = 5, debug = True):
+        """Constructor for LSTMencdec
+
+        Constructs two intances of LSTMmain, one encoder and one decoder. passes
+        structure argument to input_test function to produce the analytics of
+        the functions.
+
+        Parameters
+        ----------
+        structure: array of ints
+            2d array of ints used to specify structure of encoder decoder. The
+            top row of the array defines the encoder, the second row of the array
+            defines the decoder. Non zero digits signify then number of channels
+            in the hidden state for each layer. Zero digits specify the end of
+            the encoder, and are used before the initial digits of the decoder
+            as a placeholder. Vertical overlap of non zero digits specifies
+            that the hidden state of the encoder layer will be copied as the initial
+            state into the corresponding decoder layer. An example outputting
+            an image sequence of 5 hidden layers is shown.
+            structure = [[6,12,24,0,0,0],
+                         [0,0,24,12,8,5]].
+        input_channels: int
+            The number of channels of each image in the image input sequence to
+            the encoder decoder.
+        kernel_size: int, optional
+            The size of the convolution kernel to be used in the encoder and
+            decoder layers.
+        debug: bool, optional
+            Switch to turn off debugging print statements.
+        """
+
+
         super(LSTMencdec_onestep, self).__init__()
 #         assert isinstance(structure, np.array), "structure should be a 2d numpy array"
         assert len(structure.shape) == 2, "structure should be a 2d numpy array with two rows"
@@ -684,8 +715,26 @@ class LSTMencdec_onestep(nn.Module):
         # initialise encoder and decoder network
 
     def input_test(self):
-        """check input structure to make sure there is overlap between encoder
-        and decoder.
+        """Checks and extracts information from the given structure argument
+
+        Returns
+        -------
+        enc_shape: list of int
+            shape argument specifying hidden layers of the encoder to be passed
+            to LSTMmain constructor.
+        dec_shape: list of int
+            enc_shape: list of int
+            shape argument specifying hidden layers of the decoder to be passed
+            to LSTMmain constructor.
+        enc_overlap: list of bool
+            List of boolean values denoting whether each layer of the encoder
+            overlaps with a decoder layer in the structure input and thus should
+            copy out. To be passed to the LSTMmain 'copy_bool' argument
+        dec_overlap: list of bool
+            List of boolean values denoting whether each layer of the decoder
+            overlaps with an encoder layer in the input and thus should
+            copy in a hidden layer. To be passed to the LSTMmain 'copy_bool'
+            argument.
         """
         copy_grid = []
         # finds dimensions of the encoder
@@ -724,6 +773,25 @@ class LSTMencdec_onestep(nn.Module):
 #         [[1,2,3,0],
 #          [0,2,3,1]]
     def forward(self, x):
+        """Forward method of LSTMencdec
+
+        Takes input image sequence produces a prediction of the next image in
+        the sequence frame using a conditional LSTM encoder decoder structure
+
+        Parameters
+        ----------
+        x: tensor of doubles
+            Pytorch tensor of input image sequences. should be of size (minibatch
+            size, sequence length, channels, height, width)
+
+        Returns
+        -------
+        tensor:
+            Tensor image prediction of size (minibatch size, sequence length,
+            channels, height, width)
+        """
+
+
 
         x, out_states = self.encoder(x, copy_in = False, copy_out = self.enc_copy_out)
 
@@ -761,12 +829,24 @@ class HDF5Dataset(Dataset):
     takes a shuffled list of indices to allow specification of training and
     validation sets.
 
-    MAKE SURE TO CALL DEL ON GENERATED OBJECTS OTHERWISE WE WILL CLOG UP RAM
 
     """
 
     def __init__(self, path, index_map, transform = None):
+        """constructor for dataset
 
+        Parameters
+        ----------
+        path: str
+            Path to hdf5 dataset file to load
+        index_map: list of ints
+            List of shuffled indices. Allows shuffling of hdf5 dataset once extracted.
+            The value at the list index is the mapped sample extracted from the
+            hdf5 dataset. e.g A index list of [2,1,3] would mean that if the
+            2nd value was called via __getitem__ by a dataloader, the 1st value
+            in the dataframe would be returned. This provides less overhead than
+            shuffling each selection
+        """
 #         %cd /content/drive/My \Drive/masters_project/data
         # changes directory to the one where needed.
 
@@ -809,9 +889,22 @@ def initialise_dataset_HDF5(valid_frac = 0.1, dataset_length = 9000):
     """
     Returns datasets for training and validation.
 
-    Loads in datasets segmenting for validation fractions.
+    Loads hdf5 custom dataset and utilising a shuffle split, dividing according
+    to specified validation fraction.
 
+    Parameters
+    ----------
+    valid_frac: float
+        fraction of the loaded dataset to portion to validation
+    dataset_length: int
+        number of samples in the dataset to be loaded.
 
+    Returns
+    -------
+    train_dataset: Pytorch dataset
+        Dataset containing shuffled subset of samples for training
+    validation_dataset: Pytorch dataset
+        Dataset containing shuffled subset of samples for validation
 
     """
 
@@ -834,9 +927,29 @@ def initialise_dataset_HDF5_full(dataset, valid_frac = 0.1, dataset_length = 900
     """
     Returns datasets for training and validation.
 
-    Loads in datasets segmenting for validation fractions.
+    Loads hdf5 custom dataset and utilising a shuffle split, dividing according
+    to specified validation fraction.
 
+    Parameters
+    ----------
+    valid_frac: float
+        fraction of the loaded dataset to portion to validation
+    dataset_length: int
+        number of samples in the dataset to be loaded.
+    avg: list of floats
+        Averages for each predictor channel in the input image sequences
+    std: list of floats
+        Standard deviation for each predictor channel in the input image sequence
+    application_boolean: list of bools
+        List of booleans specifying if which predictor channels should be standard
+        score normalised
 
+    Returns
+    -------
+    train_dataset: Pytorch dataset
+        Dataset containing shuffled subset of samples for training
+    validation_dataset: Pytorch dataset
+        Dataset containing shuffled subset of samples for validation
 
     """
 
@@ -859,9 +972,11 @@ def initialise_dataset_HDF5_full(dataset, valid_frac = 0.1, dataset_length = 900
 """# shuffling functions"""
 
 def validation_split(data, n_splits = 1, valid_fraction = 0.1, random_state = 0):
-    """
-    Function to produce a validation set from test set.
-    THIS SHUFFLES THE SAMPLES. __NOT__ THE SEQUENCES.
+    """Produces a stratified shuffle split of given dataset
+
+    Wrapper around sklearn functions to produce stratified shuffle split of given
+    dataset
+
     """
     dummy_array = np.zeros(len(data))
     split = StratifiedShuffleSplit(n_splits, test_size = valid_fraction, random_state = 0)
@@ -883,26 +998,26 @@ def unsqueeze_data(data):
     return predictor, truth
     # the data should now be unsqueezed.
 
-def initialise_dataset(data):
-    # unsqueeze data, adding a channel dimension for later convolution.
-    # this also gets rid of the annoying tuple format
-    predictor, truth = unsqueeze_data(data)
-
-    train_index, valid_index = validation_split(data)
-
-    train_predictor = predictor[train_index]
-    valid_predictor = predictor[valid_index]
-
-    train_truth = truth[train_index]
-    valid_truth = truth[valid_index]
-
-    train_dataset = SequenceDataset(train_predictor, train_truth)
-    valid_dataset = SequenceDataset(valid_predictor, valid_truth)
-
-    return train_dataset, valid_dataset
+#def initialise_dataset(data):
+#    # unsqueeze data, adding a channel dimension for later convolution.
+#    # this also gets rid of the annoying tuple format
+#    predictor, truth = unsqueeze_data(data)
+#
+#    train_index, valid_index = validation_split(data)
+#
+#    train_predictor = predictor[train_index]
+#    valid_predictor = predictor[valid_index]
+#
+#    train_truth = truth[train_index]
+#    valid_truth = truth[valid_index]
+#
+#    train_dataset = SequenceDataset(train_predictor, train_truth)
+#    valid_dataset = SequenceDataset(valid_predictor, valid_truth)
+#
+#    return train_dataset, valid_dataset
 
 """#TRAINING FUNCTIONS"""
-
+# talk about this later.
 def comb_loss_func(pred, y):
     """hopefully should work like kl and bce for VAE"""
     mse = nn.MSELoss()
@@ -912,14 +1027,31 @@ def comb_loss_func(pred, y):
     return mse_loss + ssim_loss
 
 # %cd /content/drive/My\ Drive/masters_project/data/models
-def train_enc_dec(model, optimizer, dataloader, loss_func = nn.MSELoss()):
-    """
-    training function
+def train_enc_dec(model, optimizer, dataloader, loss_func = nn.MSELoss(), verbose = False):
+    """Training function for encoder decoder models.
 
-    by default mseloss
+    Parameters
+    ----------
+    model: pytorch module
+        Input model to be trained. Model should be end to end differentiable,
+        and be inherited from nn.Module. model should be sent to the GPU prior
+        to training, using model.cuda() or model.to(device)
+    optimizer: pytorch optimizer.
+        Pytorch optimizer to step model function. Adam / AMSGrad is recommended
+    dataloader: pytorch dataloader
+        Pytorch dataloader initialised with hdf5 averaged datasets
+    loss_func: pytorch loss function
+        Pytorch loss function
+    verbose: bool
+        Controls progress printing during training.
 
-    could try brier score.
-
+    Returns
+    -------
+    model: pytorch module
+        returns the trained model after one epoch, i.e exposure to every piece
+        of data in the dataset.
+    tot_loss: float
+        Average loss per sample for the training epoch
     """
     i = 0
     model.train() # enables training for model.
@@ -942,8 +1074,9 @@ def train_enc_dec(model, optimizer, dataloader, loss_func = nn.MSELoss()):
         """ACTUAL FUNCTION THATS BEEN COMMENTED OUT."""
 #         loss = loss_func(prediction, y[:,:1,:,:,:])
         """CHANGED BECAUSE """
-        print(prediction.shape)
-        print(y.shape)
+        if verbose:
+            print(prediction.shape)
+            print(y.shape)
         loss = loss_func(prediction[:,0,0], y)
 
 
@@ -976,13 +1109,16 @@ def train_enc_dec(model, optimizer, dataloader, loss_func = nn.MSELoss()):
 #         del y
         """commented it out"""
         tot_loss += loss.item() # .data.item()
-        print("BATCH:")
-        print(i)
+        if verbose:
+            print("BATCH:")
+            print(i)
         i += 1
 #         if i == 20:
 #             break
-        print("MSE_LOSS:", tot_loss / i)
-    return model, tot_loss / i # trainloss, trainaccuracy
+        if verbose:
+            print("MSE_LOSS:", tot_loss / i)
+        tot_loss /= i
+    return model, tot_loss # trainloss, trainaccuracy
 
 def validate(model, dataloader, loss_func = nn.MSELoss()):
 
@@ -1018,6 +1154,17 @@ def validate(model, dataloader, loss_func = nn.MSELoss()):
 
 
 def train_main(model, params, train, valid, epochs = 30, batch_size = 1):
+    """Main training functions for the LSTMencdec
+
+    Iterates over train_enc_dec to train the given model.
+
+    Parameters
+    ----------
+    model: pytorch module
+        returns the trained model after one epoch, i.e exposure to every piece
+        of data in the dataset.
+    train
+    """
     # make sure model is ported to cuda
     # make sure seed has been specified if testing comparative approaches
 
@@ -1050,25 +1197,22 @@ def train_main(model, params, train, valid, epochs = 30, batch_size = 1):
 """# hdf5 with avgs"""
 
 class HDF5Dataset_with_avgs(Dataset):
-    """dataset wrapper for hdf5 dataset to allow for lazy loading of data. This
-    allows ram to be conserved.
+    """
+    Returns datasets for training and validation.
 
-    As the hdf5 dataset is not partitioned into test and validation, the dataset
-    takes a shuffled list of indices to allow specification of training and
-    validation sets.
-
-    MAKE SURE TO CALL DEL ON GENERATED OBJECTS OTHERWISE WE WILL CLOG UP RAM
-
+    Loads hdf5 custom dataset and utilising a shuffle split, dividing according
+    to specified validation fraction.
     """
 
     def __init__(self, path, index_map, avg, std, application_boolean, transform = None):
-
+        """Constructor for hdf5 dataset
+        """
 #         %cd /content/drive/My \Drive/masters_project/data
         # changes directory to the one where needed.
 
         self.path = path
 
-        self.index_map = index_map # maps to the index in the validation split
+        self.index_map = list(index_map) # maps to the index in the validation split
         # due to hdf5 lazy loading index map must be in ascending order.
         # this may be an issue as we should shuffle our dataset.
         # this will be raised as an issue as we consider a work around.

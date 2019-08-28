@@ -443,7 +443,54 @@ def random_selection(image, i, j, chunk_size = 16):
     print(image[i_lower:i_upper,j_lower:j_upper])
 
 def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, cluster = False, min_events = 0, debug = True):
-    """Extracts conflict image sequences.
+    """Extracts conflict image sequence samples for a given monnth.
+
+    Produces conflict image sequence samples for each month from an input global
+    image sequnce produced using construct_combined_sequence. Takes input image
+    sequence of global representations of PRIO grid conflict predictors and extracts
+    image sequences of events. Events may be clustered to remove outliers via
+    Kmeans clustering. A square of side length chunksize surrounding each non zero
+    grid cell in the first channel of each month's prio image is randomly placed
+    and the image for that month is extracted as the truth value for prediction.
+    The preceding 10 months events are extracted in the same manner as the input.
+    If the extracted preceding sequence contains more than min_events non zero
+    values in the first image channel (total) the preceding image sequence and
+    ground truth prediction are kept.
+
+    Parameters
+    ----------
+    image: array
+        Input array of sequences of global representations of the PRIO conflict
+        predictors. This should be produced by the construct_combined_sequence
+        function. The array should be of size (months, channels, 360, 720)
+    sequence_step: int
+        The chosen month from which the prediction ground truth is extracted,
+        and which precedes the 10 predicting months, from which the image
+        prediction sequence will be extracted.
+    chunk_size: int
+        side length of the square to be cut out of the array.
+    draws: int
+        The number of times each event is to be randomly sampled. i.e how many
+        data samples are extracted per viable event
+    cluster: bool
+        Controls whether events will be subject to outlier detection before
+        being sampled. Enabling removes small, isolated events.
+    min_events: int
+        The total number of conflict events required in the prediction sequence
+        for a datasample to be accepted. 25 works as an optimum value for filtering
+        out small events with little spatial dependancy
+    debug: bool
+        controls debugging print statements.
+
+    Returns
+    -------
+    tuple:
+        Returns tuple of two numpy arrays. The first contains an array of sampled
+        prediction sequences, the second contains an array of ground truth next
+        steps in the conflict sequence. The prediction sequence array is of dimensions
+        (number of samples, sequence steps, channels, chunksize, chunksize)
+        The array of ground truths is of size (number of samples, chunksize,
+        chunksize)
     """
     if debug:
         print("Image shape is:" , image.shape)
@@ -537,20 +584,49 @@ def debug_func1(dataframe, month):
     print(len(a[a.best >0]))
 
 def binary_event_column(dataframe):
-    """ as it is hard to encode categorical information about battles when
-    battle deaths = 0, we then encode a binary - 0, 1 layer pertaining to
-    whether an event took place"""
+    """Dummy function to add column of 1s
+    to pandas Dataframe"""
     new_col = np.ones(len(dataframe))
     dataframe["binary_event"] = new_col
 
 def nan_to_one(dataframe, key):
-    """takes column from dataframe"""
+    """Replaces NaNs in dataframe column with 0s"""
     dataframe[key] = dataframe[key].fillna(0)
 
 
 def full_dataset_h5py(image, filename, key_list_prio, key_list_ucdp, chunk_size = 16, draws = 5, min_events = 25, debug = False):
-    """ dataset is too large to combine in 12gb of ram - need to combine in h5py
-    array. i.e lazy saving as well as lazy loading"""
+    """Produces h5py Dataset of conflict image sequences, and the prediction ground truth
+
+    Uses random_grid_selection to extract conflict image prediction sequences
+    and the next step in the sequence (i.e the image to be predicted). The produced
+    image sequences are stored in a hdf5 dataset to allow lazy loading of image
+    sequences. The keys 'predictor' and 'truth' are used to store the predictors
+    and prediction ground truths. The data selected is stored as meta data attributes
+    on the hdf5 dataset.
+
+    Parameters
+    ----------
+    image: array
+        Input array of sequences of global representations of the PRIO conflict
+        predictors. This should be produced by the construct_combined_sequence
+        function. The array should be of size (months, channels, 360, 720)
+    filename: str
+        name of hdf5 file to be saved.
+    key_list_prio: str, list
+        List of PRIO data keys selected
+    key_list_ucdp: str, list
+        List of UCDP data keys selected
+    chunk_size: int
+        dimensions of images in image sequence to be extracted.
+    draws: int
+        Number of times an event is to be randomly sampled
+    min_events: int
+        Threshold of conflict events in image sequence that the image sequence
+        must meet to be added to the dataset.
+    debug: bool
+        Switch for turning on debugging print options
+
+    """
 
     with h5py.File(filename + ".hdf5", 'w') as f:
         for i in range(11, len(image)):
@@ -586,29 +662,52 @@ def data_set_analysis(dataset):
 
 
 """# AVERAGING FUNCTION"""
-def chunked_average():
-    l = np.random.randint(0, 2, size = [123,10,10])
-    a = 0
-    b = 0
-    div = 2
-    for i in range(int(len(l)/div)):
-        a += np.sum(l[i *div : (i+1)*div])
-        b += np.sum(l[i *div : (i+1)*div] * l[i *div : (i+1)*div])
-
-
-    a += np.sum(l[(i +1) * div: len(l)])
-    b += np.sum(l[(i +1) * div: len(l)] * l[(i +1) * div: len(l)])
-#    print(a /( 123 * 10 * 10))
-    a /= np.prod(l.shape)
-    print(a)
-    print(np.average(l))
-    b /= np.prod(l.shape)
-    print(np.sqrt(b - a**2))
-    print(np.std(l))
+#def chunked_average():
+#    l = np.random.randint(0, 2, size = [123,10,10])
+#    a = 0
+#    b = 0
+#    div = 2
+#    for i in range(int(len(l)/div)):
+#        a += np.sum(l[i *div : (i+1)*div])
+#        b += np.sum(l[i *div : (i+1)*div] * l[i *div : (i+1)*div])
+#
+#
+#    a += np.sum(l[(i +1) * div: len(l)])
+#    b += np.sum(l[(i +1) * div: len(l)] * l[(i +1) * div: len(l)])
+##    print(a /( 123 * 10 * 10))
+#    a /= np.prod(l.shape)
+#    print(a)
+#    print(np.average(l))
+#    b /= np.prod(l.shape)
+#    print(np.sqrt(b - a**2))
+#    print(np.std(l))
 
 
 
 def find_avg_lazy_load(data, div = 10000):
+    """Extracts average and std from produced hdf5 datasets
+
+    Uses hdf5 lazy loading to subdivide produced image sequence datasets and extract
+    an overall average, when the produced datasets are too large to naively average
+    and find the standard deviation for.
+
+    Parameters
+    ----------
+    data: hdf5 file
+        Takes loaded hdf5 file. File should have two datasets, accessible via
+        the keys: 'predictor' and 'truth'. Full_dataset_h5py produces suitable
+        files.
+    div: int
+        The number of datasamples to average over at a time.
+
+    Returns
+    -------
+    avg: list of int
+        List of averages for each channel in the input image sequence dataset
+    std: List of int
+        List of standard deviations for each channel in the inout image sequence
+        dataset.
+    """
     # file name is name of hdf5 file
 #     data = h5py.File(filename, 'r')
     predictor = data["predictor"]
@@ -680,13 +779,35 @@ def mod_overlap(module_1, module_2):
     lists_overlap(dir(module_1), dir(module_2))
 
 def index_return(ind, x_dim, y_dim):
-    """just for converting indices quickly"""
+    """"""
     x_out = ind % x_dim
     y_out = int(ind / x_dim)
     return y_out, x_out
 
 def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
-    """returns grid location for given grid size"""
+    """Returns grid Coordinates for given longitude, lattitude
+
+    Used for converting longitude and lattitude of conflict events into grid cells
+
+
+    Parameters
+    ----------
+    long: float
+        Degree of longitude for desired location
+    lat: float
+        Degree of lattitude for desired location
+    x_dim: int, optional
+        Number of grid cells in x dimension
+    y_dim: int, optional
+        Number of grid cells in y dimension
+
+    Returns
+    -------
+    long: int
+        Longitudonal cell index of given location
+    lat: int
+        Lattitudonal cell index of given location
+        """
     lat_dummy = np.arange(-90,90,0.5)
     long_dummy = np.arange(-180,180,0.5)
 
@@ -704,6 +825,27 @@ def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
     return long, lat
 
 def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_colour = 'black'):
+    """Plots PlateCarree map projection of given PRIO grid global representation
+
+    Plots heatmap of given global array of PRIO grid encoded predictors. Plotted
+    on PlateCaree projection using cartopy.
+
+    Parameters
+    ----------
+    test_array: array
+        input array representation of conflict parameters to display. Input must
+        be of dimensions (360 x 720). Input easily constructed using
+        construct_layer function.
+    vmin, vmax: float, optional
+        Control the cutoff of values represented in the heatmap. Passed as a parameter
+        to maplotlib.pyplot.pcolormesh
+    colour: str, optional.
+        Optional specification of the plotting colourscheme. may be any matplotlib
+        supported colorscheme.
+    border_color: str, optional
+        Specifies the colour of the country outlines in the plot. may be 'black',
+        'white', or 'grey'.
+    """
 
     north = 37.32
     south = -34.5115
