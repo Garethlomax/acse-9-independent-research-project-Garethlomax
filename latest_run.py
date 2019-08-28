@@ -301,6 +301,17 @@ class LSTMmain(nn.Module):
         The number of channels in the output image sequence
     kernel_size: int
         The size of the kernel used in the convolutional opertation.
+    test_input: int, list
+        Describes the number of hidden channeels in the layers of the multilayer
+        ConvLSTM. Is a list of minimum length 1. i.e a ConvLSTM with 3 layers
+        with 2 hidden states in each would have test_input = [2,2,2]
+    copy_bool : boolean, list
+        List of booleans for each layer of the ConvLSTM specifying if a hidden
+        state is to be copied in as the initial hidden state of the layer. This
+        is for use in encoder - decoder architectures
+    debug: boolean
+        Controls print statements for debugging
+
 
 
     """
@@ -367,6 +378,39 @@ class LSTMmain(nn.Module):
 
 
     def forward(self, x, copy_in = False, copy_out = [False, False, False]):
+        """Forward method of the ConvLSTM
+
+        Takes a sequence of image tensors and returns the hidden state output
+        of the final LSTM layer. Takes in hidden state tensors for intermediate
+        layers to allow for use in decoder models. The method can copy out specified
+        hidden states to allow for use in encoder models.
+
+        Parameters
+        ----------
+        x : double, tensor
+            Input image sequence tensor, of dimensions (minibatch size, sequence
+            length, channels, height, width)
+        copy_in: list of double tensors
+            List of hidden state tensors to be copied in to LSTM layers specified
+            by copy_bool. copy_in should only contain the hidden state tensors
+            for the require a copied in state. The states should be arranged in
+            order, so that the hidden state to be copied into the first layer
+            is first.
+        copy_out: boolean, list
+            List of booleans specifying which layer hidden states are to be copied
+            out due to being required to be passed to a decoder.
+
+        Returns
+        -------
+        x: double, tensor
+            Tensor of the hidden state outputs of the final LSTM layer. x is of
+            shape (minibatch size, image sequence length, final hidden channel
+            number, height, width)
+        internal_outputs: tensor, list
+            Last hidden states of layers specified by copy_out. To be used in
+            encoder LSTM to be copied into decoder LSTM as the copy_in parameter
+
+        """
 #     def forward(self, x):
 #         copy_in = False
 #         copy_out = [False, False, False]
@@ -597,7 +641,30 @@ class LSTMmain(nn.Module):
 
 
 class LSTMencdec_onestep(nn.Module):
-    """structure is overall architecture of """
+    """Class to allow easy construction of ConvLSTM Encoder-Decoder models
+
+    Constructs ConvLSTM encoder - decoder models using LSTMmain. Takes structure
+    argument to specify architecture of initialised model. The structure is a
+    2D numpy array. The top row of the array defines the encoder, the bottom
+    row defines the encoder. Non zero values in the encoder and decoder rows
+    define the number of layers and the hidden channel number for each layer
+    of the encoder decoder model. 0 values after a positive in an encoder row
+    denote the end of the encoder. 0 values precede the hidden channel
+    specification for the decoder. A column overlap between two non zero values
+    means that the hidden states are copied out of the corresponding encoder layer
+    and into the decoder model. An encoder that has hidden channels of size
+    6, and 12, and decoder that reduces the prediction to 6 channels symmetrically
+    would be input as: structure = [[6,12,0,],
+                                    [0,12,6]]
+
+    Attributes
+    ----------
+
+    Structure: int, list
+
+
+    """
+
     def __init__(self, structure, input_channels, kernel_size = 5, debug = True):
         super(LSTMencdec_onestep, self).__init__()
 #         assert isinstance(structure, np.array), "structure should be a 2d numpy array"
