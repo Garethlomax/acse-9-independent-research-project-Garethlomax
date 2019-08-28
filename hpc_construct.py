@@ -24,6 +24,18 @@ import random
 """# FUNCTIONS"""
 
 def date_to_int_list(date):
+    """Transforms string date into list
+
+    Parameters
+    ----------
+    date: str
+        String of format 'yyyy-mm-dd'
+
+    Returns
+    -------
+    list, int
+        List of numerical format [y,m,d]
+    """
     # date is in format yyyy-mm-dd
 
     y = int(date[0:4])
@@ -35,6 +47,21 @@ def date_to_int_list(date):
     return [y,m,d]
 
 def monotonic_date(date, baseline = [1989, 1, 1]):
+    """Returns the number of months elapsed between date and baseline
+
+    Parameters
+    ----------
+    date: str
+        Date in string format 'yyyy-mm-dd'. Input as string as this is the default
+        date storage of PRIO and UCDP data formats.
+    baseline: list, int
+        Numerical date in format [y,m,d].
+
+    Returns
+    -------
+    int:
+        Elapsedc number of months between date and baseline
+    """
 
     date = date_to_int_list(date)
 #    print(type(date[0]))
@@ -46,6 +73,33 @@ def monotonic_date(date, baseline = [1989, 1, 1]):
 
 
 def construct_layer(dataframe, key, prio_key = "gid", debug = False):
+    """Constructs single global parameter map of PRIO encoded variables
+
+    Takes input dataframe of either PRIO or UCDP data. Produces 360 x 720 array
+    prio grid single layer representation of conflict predictor specified by
+    key input.
+
+    Parameters
+    ----------
+    dataframe: Pandas Dataframe
+        Dataframe of either UCDP or PRIO data, with column index of prio grid cells
+        for each entry. Data is found at PRIO or UCDP websites XXXX.
+    key: str
+        Dataframe key for chosen predictor to be extracted and spatially
+        represented in the output array.
+    prio_key: str
+        Dataframe key for the column noting the PRIO grid cell location of each
+        entry. For UCDP csvs prio_key = 'priogrid_gid', for PRIO csvs prio_key
+        = 'gid'
+    debug: bool
+        controls debugging print statements
+
+    Returns
+    -------
+    array:
+        array of height 360, width 720 containing the selected parameter arranged
+        spatially into the corresponding PRIO grid cell.
+    """
     # returns 360 720 grid layer for a given parameter
     # should be given for one parameter per year.
     array = np.zeros(360*720)
@@ -60,8 +114,46 @@ def construct_layer(dataframe, key, prio_key = "gid", debug = False):
 
 
 """ UPDATE THIS FUNCTION"""
+
 def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, key_list_ucdp, start = [1989, 1,1], stop = [2014,1,1]):
-    """commented out the stop and start"""
+    """Constructs Series of global representations of PRIO and UCDP conflict predictors
+
+    Constructs Series of global representations of PRIO and UCDP conflict
+    predictors in an image array format. Image representations of the selected
+    conflict predictors at each month between start and stop dates are predicted
+    into a global prio grid represenation of size 360 x 720. Each selected predictor
+    is allocated an image channel. The output is returned as size: (months,
+    predictor number, 360, 720). The output is of size 360 x 720 due to each
+    prio grid cell being of dimensions 0.5 degrees lattitude and longitude.
+
+    Parameters
+    ----------
+    dataframe_prio: pandas DataFrame
+        Dataframe constructecd from PRIO grid data CSV in the format supplied
+        by the PRIO grid Project.
+    dataframe_ucdp: pandas DataFrame
+        Dataframe constructecd from UCDP grid data CSV in the format supplied
+        by the UCDP grid Project.
+    key_list_prio: str, list
+        List of Dataframe keys for desired predictors to extract from the PRIO
+        Dataframe to represent spatially per prio grid cell.
+    key_list_ucdp: str, list
+        List of Dataframe keys for desired predictors to extract from the UCDP
+        Dataframe to represent spatially per prio grid cell.
+    start: int, list
+        Representation of data extraction start date. in [y,m,d] format
+    stop: int, list
+        Representation of data extraction finish date. in [y,m,d] format
+
+    Returns
+    -------
+        array:
+            returns array of size (months, channels, height, width). The array
+            is a sequence of global images of Conflict predictors for each month
+            between specified start and end dates. Each channel represents a
+            specified conflict predictor. Each pixel corresponds to one PRIO grid
+            cell.
+    """
     #stop  = '2014-01-01'
     # need to adapt ged and other year / month vs ged database for this.
     # bool prio to add multiples of 12 to each year usin prio grid.
@@ -74,21 +166,50 @@ def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, k
     stop = date_to_int_list(stop)
 
     month = 0
+    extract_month = monotonic_date('2012-01-01')
     for i in range(start[0], stop[0]):
         for j in range(12): # for each month
             # now fill in selected channels as requried.
 
-            array[month][:len(key_list_ucdp)] = construct_channels(dataframe_ucdp[dataframe_ucdp.mon_month == month], key_list = key_list_ucdp, prio_key = "priogrid_gid")
+            array[month][:len(key_list_ucdp)] = construct_channels(dataframe_ucdp[dataframe_ucdp.mon_month == extract_month], key_list = key_list_ucdp, prio_key = "priogrid_gid")
             array[month][len(key_list_ucdp):] = construct_channels(dataframe_prio[dataframe_prio.year == i], key_list = key_list_prio, prio_key = 'gid')
-            print(month)
+            print(extract_month)
 
             month += 1
+            extract_month +=1
     del month
     return array
 
 
 
 def construct_channels(dataframe, key_list, prio_key = "gid"):
+    """Constructs global parameter layer of multiple specified conflict predictors
+
+    Constructs global parameter layer of multiple specified conflict predictors
+    for use in Construct_Combined_sequence. Takes dataframe of either PRIO or
+    UCDP conflict data for a single month and selects predictors for channels
+    based on the key_list argument.
+
+    Parameters
+    ----------
+    dataframe: pandas Dataframe
+        Dataframe of conflict data, constructed from CSV datasets from PRIO or
+        UCDP. Must have a column of PRIO grid cell values for each Predictor
+        value.
+    key_list: str, list
+        List of Dataframe keys for which parameters are extracted into image
+        layers.
+    prio_key: str
+        Dataframe key for the PRIO grid column. For PRIO converted datasets the
+        key is 'gid'. For UCDP converted datasets the key is 'priogrid_gid'
+
+    Returns
+    -------
+    array:
+        image representation of global values of conflict data. Returns image of
+        dimension (len(key_list, 360, 720). Each pixel represents the predictor
+        value at a particular grid cell.
+    """
     # usually used for prio
     array = np.zeros((len(key_list), 360, 720))
     for i, keys in enumerate(key_list):
@@ -162,11 +283,29 @@ def construct_sequence(dataframe, key_list, prio_key = 'gid', start = [1989, 1, 
     return array
 
 
-def date_column(dataframe, baseline = [1989,1,1]):
+def date_column(dataframe, baseline = [1989,1,1], date_start_key = "date_start"):
+    """Simple function to add monotonically increasing month to Dataframe
+
+    Adds column entitled 'mon_month' to UCDP dataframes encoding the time ellapsed
+    in months between the event start date and a baseline measurng period.
+
+    Parameters
+    ----------
+    dataframe: pandas Dataframe
+        dataframe of ucdp conflict events. Must have a column of start dates in
+        format "yyyy-mm-dd" stored as a string. The column key should be equal
+        to date start key.
+    baseline: int, list
+        The start date from which the elapsed time in months is computed from
+        i.e month 0. Must be a list of integers in format [y,m,d]
+    date_start_key: str
+        Dataframe key for the column containing date starts
+
+    """
     # puts new column on dataframe, no need to return.
     # date start just as dummy atm
 #    dataframe = dataframe["date_start"]
-    vals = dataframe["date_start"].values
+    vals = dataframe[date_start_key].values
     new_col = np.array([monotonic_date(string_date) for string_date in vals])
     dataframe["mon_month"] = new_col
 
@@ -192,142 +331,6 @@ def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
     for key in key_list_prio:
         csv.write(key + "\n")
     csv.close()
-
-#def raster_test(input_data, chunk_size = 16):
-#    # to overcome edge sizes can make selection large if we just reject the training data for outside africa
-#    # although we do not necessarily need to do this
-#    # i.e expand box and allow less sampled box to sampel others more frequently.
-#
-#    # step size is always 1
-#    # assuming image is a cutout of globe
-#    # this is for single step, single channel as a test.
-#    step = 1
-#    height = input_data.shape[-2]
-#    width = input_data.shape[-1]
-#    for i in range(height - chunk_size + 1):
-#        for j in range(width - chunk_size+1):
-#            print(input_data[:,i:i+chunk_size,j:j + chunk_size])
-#            print(".")
-
-#    plt.imshow(input_data)
-
-#def raster_selection(input_data, chunk_size = 16):
-#    # here input_data is sequence step.
-#    # data should be of dimensions seq, channels, height, width.
-#    # to overcome edge sizes can make selection large if we just reject the training data for outside africa
-#    # although we do not necessarily need to do this
-#    # i.e expand box and allow less sampled box to sampel others more frequently.
-#
-#    # step size is always 1
-#    # assuming image is a cutout of globe
-#    # this is for single step, single channel as a test.
-#    step = 1
-#    height = input_data.shape[-2]
-#    width = input_data.shape[-1]
-#    # this is not efficient.
-#    for i in range(height - chunk_size + 1):
-#        for j in range(width - chunk_size+1):
-#            input_data[0][i:i+chunk_size,j:j + chunk_size]
-#
-#    plt.imshow(input_data)
-
-
-#def random_pixel_bounds(i, j, chunk_size = 16):
-#    # returns the bounds of the image to select with a random pixel size.
-#
-#    height = random.randint(0, chunk_size-1)
-#    width = random.randint(0, chunk_size-1)
-#    # this randomly generates a of the image for where the pixel may be located
-#    # randomly in the cut out image.
-#    i_lower = i - height
-#    i_upper = i + (chunk_size - height)
-#
-#    j_lower = j - width
-#    j_upper = j + (chunk_size - width)
-#
-#    return [i_lower, i_upper, j_lower, j_upper]
-
-#def random_selection(image, i, j, chunk_size = 16):
-#
-#    i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(i, j, chunk_size = chunk_size)
-#
-#    print(image[i_lower:i_upper,j_lower:j_upper])
-
-#def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, debug = True):
-#    if debug:
-#        print("Image shape is:" , image.shape)
-#
-
-    # decide if this is going to be h5py loaded.
-
-    # decide what sequence step is going to be like and how to return it
-
-    # image is seq, channels, height, width
-
-    # here we are using a seq length of 10. - could use 12 but atm we go for 10.
-
-    # sequence step is the step at which the TRUTH is being extracted. the predictor sequence
-    # is extracted from the 10 preceding steps. be careful to send in from i > 11
-#    assert sequence_step > 10, ("This function selects the datapoints from this test set that contain"
-#                                "a conflict event and then selects predictor data from the 10 preceding steps"
-#                                " as a result i > 10 must be true")
-#    # for sequence step, 0th layer - i.e fatalities
-#    y, x = np.where(image[sequence_step][0] >= 1)
-#
-#    if debug:
-#        print(x.shape)
-#
-#    truth_list = []
-#    predictor_list = []
-#
-#    # re arange for loops for speed?
-#    for i,j in zip(y, x): # now over sites where fatalities have occured
-#        for _ in range(draws):
-#            i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(i, j, chunk_size=chunk_size)
-#
-#            # now need to work out how to store these. how to stack ontop ect.
-#            truth = image[sequence_step][0,i_lower:i_upper,j_lower:j_upper]
-#            # check these dimensions
-#            """FIXED BELOW """
-#            predictors = image[sequence_step-10:sequence_step, :,i_lower:i_upper,j_lower:j_upper]
-#
-#            truth_list.append(truth)
-#            predictor_list.append(predictors)
-#
-#    # finally we combine the previous arrays.
-#
-#    return np.stack(predictor_list, axis= 0), np.stack(truth_list, axis = 0)
-#
-
-#def full_dataset_numpy(image, chunk_size = 16, draws = 5, debug = False):
-#    # image is seq, channels, height, width
-#    predictor_list = []
-#    truth_list = []
-#    for i in range(11, len(image)):
-#        t1, t2 = random_grid_selection(image, i)
-#        predictor_list.append(t1)
-#        truth_list.append(t2)
-#
-#    truth_np = np.concatenate(truth_list, axis = 0)
-#    predictor_np = np.concatenate(predictor_list, axis =0)
-#    return predictor_np, truth_np
-#
-#def quick_dataset(data, name):
-#    f = h5py.File(name + ".hdf5", "w")
-#    f.create_dataset("main", data = data)
-##    f.create_dataset("truth", data = truth)
-#    f.close()
-
-
-
-
-#data = pd.read_csv("data/ged191.csv")
-
-#def debug_func1(dataframe, month):
-#    a = dataframe[dataframe.mon_month == month]
-#    print(len(a[a.best >0]))
-#
-
 
 
 
@@ -376,6 +379,33 @@ def raster_selection(input_data, chunk_size = 16):
 
 
 def random_pixel_bounds(i, j, chunk_size = 16):
+    """Returns range of indices to extract a randomly placed square of size
+    chuksize in which the specified entry of the overall array is captured
+
+    Function returns 4 parameters: i_lower, i_upper, j_lower, j_upper which define
+    the bounds of the square region to be extracted. structured so the extracted
+    region may be defined as extracted = target[i_lower:i_upper, j_lower:j_upper]
+
+    Parameters
+    ----------
+    i: int
+        i index of the array entry to be captured
+    j: int
+        j index of the array entry to be captured
+    chunk_size: int
+        side length of the square to be cut out of the array.
+
+    Returns
+    -------
+    i_lower: int
+        Lower i index for the random square placed over the targetted event.
+    i_upper: int
+        Upper i index for the random square placed over the targetted event.
+    j_lower: int
+        Lower j index for the random square placed over the targetted event.
+    j_upper: int
+        Upper j index for the random square placed over the targetted event.
+    """
     # returns the bounds of the image to select with a random pixel size.
 
     height = random.randint(0, chunk_size-1)
@@ -390,13 +420,31 @@ def random_pixel_bounds(i, j, chunk_size = 16):
 
     return [i_lower, i_upper, j_lower, j_upper]
 
+
 def random_selection(image, i, j, chunk_size = 16):
+    """Quick method of visualising randomly selected array portion
+
+    Uses random_pixel_bounds to select a portion of an array.
+
+    Parameters
+    ----------
+    image: array
+        Array from which the random selection to be displayed is extracted
+    i: int
+        i index of array entry which will be included in the random selection
+    j: int
+        j index of array entry which will be included in the random selection
+    chunk_size:
+        Edge size of image to be extracted.
+    """
 
     i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(i, j, chunk_size = chunk_size)
 
     print(image[i_lower:i_upper,j_lower:j_upper])
 
 def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, cluster = False, min_events = 0, debug = True):
+    """Extracts conflict image sequences.
+    """
     if debug:
         print("Image shape is:" , image.shape)
 
@@ -499,83 +547,6 @@ def nan_to_one(dataframe, key):
     """takes column from dataframe"""
     dataframe[key] = dataframe[key].fillna(0)
 
-#"""# LOADING DATA AND FUNCTION"""
-
-# Commented out IPython magic to ensure Python compatibility.
-# %pwd
-
-# Commented out IPython magic to ensure Python compatibility.
-# %cd ..
-
-#"""load in data"""
-#
-#data_prio = pd.read_csv("data/PRIO-GRID Yearly Variables for 1946-2014 - 2019-07-26.csv")
-#data_ucdp = pd.read_csv("data/ged191.csv")
-#
-##data_prio
-#
-#"""sub selecting only the african region - just to test for simplicity - compare training on both at a later date"""
-#
-#north = 37.32
-#south = -34.5115
-#west = -17.3113
-#east = 51.2752
-#
-#data_ucdp = data_ucdp[(data_ucdp.latitude >= south) & (data_ucdp.latitude <= north) & (data_ucdp.longitude >= west) & (east >= data_ucdp.longitude)]
-#
-#"""add monotonic month column to the ucdp data, turn nans into 1s for petroleum and drugs"""
-##
-##date_column(data_ucdp)
-#binary_event_column(data_ucdp)
-#nan_to_one(data_prio, "petroleum_y")
-#nan_to_one(data_prio, "drug_y")
-#
-#
-#
-#"""construct full image sequence"""
-#
-#key_list_prio = ["petroleum_y","drug_y", "prec_gpcp"] # not temp - needs better imputation
-#
-#key_list_ucdp = ['binary_event', 'best']
-#
-#train_set = construct_combined_sequence(data_prio, data_ucdp, key_list_prio=key_list_prio, key_list_ucdp=key_list_ucdp, start=[1989,1,1], stop = '2012-01-01')#stop = [2012,1,1])
-#
-#test_set = construct_combined_sequence(data_prio, data_ucdp, key_list_prio=key_list_prio, key_list_ucdp=key_list_ucdp, start=[2012,1,1], stop = '2014-01-01')#stop = [2014,1,1])
-#
-#"""# np.save("train_array", train_set)
-## np.save("test_array", test_set)
-#"""
-#
-## Commented out IPython magic to ensure Python compatibility.
-# %pwd
-# %cd ..
-
-# np.save("array_4", test)
-#test_set = np.load("test_array.npy")
-#train_set = np.load("train_array.npy")
-#
-#"""correct test binary layer - by correcting the other layer"""
-#
-## changed to 0 due to changing order of layers.
-#
-##print(test_set[:,0].shape)
-##print(np.unique(test[:,0]))
-#test_set[:,0][test_set[:,0] > 0] = 1
-#train_set[:,0][train_set[:,0] > 0] = 1
-## plt.figure(figsize = (50,10))
-## plt.imshow(test[199][1],vmin = 0, vmax = 1)
-#
-#np.unique(test_set[:,0])
-#np.unique(train_set[:,0])
-#
-#plt.figure(figsize = (50,10))
-#plt.imshow(test_set[11][0],vmin = 0, vmax = 1)
-#
-#np.unique(test_set[0][0])
-#
-#"""now put this into our random selection."""
-#
-#test_set.shape
 
 def full_dataset_h5py(image, filename, key_list_prio, key_list_ucdp, chunk_size = 16, draws = 5, min_events = 25, debug = False):
     """ dataset is too large to combine in 12gb of ram - need to combine in h5py
@@ -602,84 +573,7 @@ def full_dataset_h5py(image, filename, key_list_prio, key_list_ucdp, chunk_size 
 
 
 
-#     f.close()
 
-#train_set[:100].shape
-#
-#test_set.shape
-#
-## a, b = full_dataset_numpy(test)
-#full_dataset_h5py(train_set, "train_fixed_25",key_list_prio, key_list_ucdp)
-## why does this only work with array > 105???????????
-#full_dataset_h5py(test_set, "test_fixed_25",key_list_prio, key_list_ucdp)
-
-# Commented out IPython magic to ensure Python compatibility.
-# %pwd
-# %cd data
-
-##
-#f = h5py.File("train_fixed_25.hdf5", 'r')
-#
-#f['predictor'].shape
-#
-#
-#
-#k = f['predictor'][333]
-#a = f['truth'][333]
-#
-#np.unique(k[:,0])
-#
-#a.shape
-#
-#for i in range(10):
-#    plt.figure()
-#    plt.imshow(k[i,0])
-#
-#plt.figure()
-#plt.imshow(a)
-
-
-
-
-#val  = k[0:10000,:,0]
-
-# # print(np.average(val))
-# # print(np.average(k[10000:20000,:,0]))
-
-# for i in range(7):
-#     print(np.std(k[i * 10000:(i+1)*10000, :, 0]))
-
-
-# print(np.std(k[80000:84485, :, 0]))
-
-
-
-#
-#
-#f['predictor'].shape
-#
-#f['truth'].shape
-#
-#f["predictor"].shape
-#
-#f["predictor"][21000][0][2]
-#
-#f["predictor"].shape
-#
-#for i in range(10):
-#    plt.figure()
-#    plt.imshow(f["predictor"][21000][i][0])
-#
-#f["predictor"].shape
-#k = 0
-#for i in range(248580):
-#    k +=1
-#print("done")
-
-# len(np.where(f["predictor"][100000][:,0] > 0)[0])
-# f["predictor"][100000][:,0]
-# plt.imshow(f["predictor"][100000][:,0][0])
-#len([])
 
 def data_set_analysis(dataset):
     dat = np.zeros(len(dataset["predictor"]))
@@ -689,25 +583,7 @@ def data_set_analysis(dataset):
             print(i)
     return dat
 
-#dats = data_set_analysis(f)
-#np.save("distribution_min_25", dats)
-#
-## np.save("dats_saved", dats)
 
-# np.unique(dats)
-
-# plot = sns.distplot(dats)
-
-# figure = plot.get_figure()
-
-# figure.savefig("min_events_25.pdf")
-
-#f["predictor"][0][:,0][0].shape
-#plt.imshow(f["predictor"][1000][:,1][0])
-#
-## f.close()
-
-#f
 
 """# AVERAGING FUNCTION"""
 def chunked_average():
@@ -883,18 +759,3 @@ def round(i):
     if k>0.5: # if above i.5 orrigionally
         j += 0.5
     return j
-
-
-
-
-#f['predictor'].shape
-#
-#avg, std = find_avg_lazy_load(f)
-#
-#np.save("fixed_25_avg", avg)
-#
-#np.save("fixed_25_std", std)
-#
-#f['predictor'].shape
-#
-## avg, std = find_avg_lazy_load("data_prio_run_test4.hdf5")
