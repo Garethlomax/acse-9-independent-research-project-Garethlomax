@@ -828,8 +828,6 @@ class HDF5Dataset(Dataset):
     As the hdf5 dataset is not partitioned into test and validation, the dataset
     takes a shuffled list of indices to allow specification of training and
     validation sets.
-
-
     """
 
     def __init__(self, path, index_map, transform = None):
@@ -1197,11 +1195,35 @@ def train_main(model, params, train, valid, epochs = 30, batch_size = 1):
 """# hdf5 with avgs"""
 
 class HDF5Dataset_with_avgs(Dataset):
-    """
-    Returns datasets for training and validation.
+    """dataset wrapper for hdf5 dataset to allow for lazy loading of data. This
+    allows ram to be conserved.
 
-    Loads hdf5 custom dataset and utilising a shuffle split, dividing according
-    to specified validation fraction.
+    As the hdf5 dataset is not partitioned into test and validation sets, the dataset
+    takes a shuffled list of indices to allow specification of training and
+    validation sets. The dataet lazy loads from hdf5 datasets and applies standard
+    score normalisation in the __getitem__ method.
+
+    Parameters
+    ----------
+    path: str
+        filepath to hdf5 dataset to be loaded.
+    index_map: list of ints
+        List of shuffled indices. Allows shuffling of hdf5 dataset once extracted.
+        The value at the list index is the mapped sample extracted from the
+        hdf5 dataset. e.g A index list of [2,1,3] would mean that if the
+        2nd value was called via __getitem__ by a dataloader, the 1st value
+        in the dataframe would be returned. This provides less overhead than
+        shuffling each selection.
+    avg: list of floats
+        List of averages for every channel in image sequence loaded. Length should
+        equal number of channels in dataset image sequence
+    std: list of floats
+        List of standard deviations for every channel in image sequence loaded.
+        Length should equal number of channels in dataset image sequence.
+    application_boolean: list of bools
+        List of bools indicating whether standard score normalisation is to be
+        applied to each layer. Length should equal number of channels in dataset
+        image sequence.
     """
 
     def __init__(self, path, index_map, avg, std, application_boolean, transform = None):
@@ -1295,6 +1317,50 @@ class HDF5Dataset_with_avgs(Dataset):
 """# wrapper"""
 
 def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_boolean, lr = None, epochs = 50, kernel_size = 3, batch_size = 50):
+    """Training wrapper for LSTM encoder decoder models.
+
+    Trains supplied model using train_enc_dec fucntions. Logs model hyperparameters
+    and trainging and validation losses in csv training log. Saves the model and
+    optimiser state dictionaries after each epoch in order to allow for easy
+    checkpointing.
+
+    Parameters
+    ----------
+    name: str
+        filename to save CSV training logs as.
+    optimizer: pytorch optimizer
+        The desired optimizer needed to train the model
+    structure: array of ints
+        Structure argument to be passed to lstmencdec. See LSTMencdec for explanation
+        of structure format.
+    loss_func: pytorch module
+        Loss function to be used to calculate training and validation losses.
+        The loss should be a CLASS instance of the pytorch loss function, not
+        a functinal implementation.
+    avg: list of floats
+        List of averages for every channel in image sequence loaded. Length should
+        equal number of channels in dataset image sequence
+    std: list of floats
+        List of standard deviations for every channel in image sequence loaded.
+        Length should equal number of channels in dataset image sequence.
+    application_boolean: list of bools
+        List of bools indicating whether standard score normalisation is to be
+        applied to each layer. Length should equal number of channels in dataset
+        image sequence.
+    lr: float
+        Learning rate for the optimizer
+    epochs: int
+        Number of epochs to train the model for
+    kernel_size: int
+        Size of convolution kernel for the LSTMencoderdecoder
+    batch_size: int
+        Number of samples in each training minibatch.
+
+    Returns
+    -------
+    bool:
+        indicates if training has been completed.
+    """
     f = open(name + ".csv", 'w') # open csv file for saving
 
     if torch.cuda.device_count() > 1:
@@ -1378,11 +1444,7 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
 
 #         torch.save(optimizer.state_dict(), name+str(epoch)+".pth")
 #         torch.save(model.state_dict(), name+str(epoch)+".pth")
-
-
-
-
-
+    return True
 
 #     f.close()
 
@@ -1393,6 +1455,19 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
 
 
 def test_image_save(model, train_loader, name, sample = 7):
+    """Saves comparison between prediction of the given model and ground truth.
+
+    Parameters
+    ----------
+    model:
+        Trained model to visualise prediction of.
+    train_loader:
+        Dataloader of dataset from which input sequence to be visualised is stored
+    name: str
+        Filename to save visualised comparison in.
+    sample: int
+        Sample of the input dataset to be predicted.
+    """
     model.eval()
     # calculate x and prediction
     for a, b in train_loader:
@@ -1432,6 +1507,20 @@ def test_image_save(model, train_loader, name, sample = 7):
 
 
 def f1(model, train_loader, avg = 'macro'):
+    """Produces average F1 score for each image prediction in the dataset.
+
+    Parameters
+    ----------
+    model:
+        Trained model to visualise prediction of.
+    train_loader:
+        Dataloader of dataset from which input sequence to be visualised is stored
+    avg: str
+        method of averaging over each multilabel image. see sklearn.metrics.f1_score
+        for specification of the average key types
+
+
+    """
     model.eval()
     # calculate x and prediction
     for a, b in train_loader:
@@ -1473,7 +1562,33 @@ def f1(model, train_loader, avg = 'macro'):
 #     print(x[sample][0][0])
 
 def metrics(model, train_loader, name = 'default', verbose = True, save = True):
-    """Calculate TN, FN, TP, FP for multilabel classification"""
+    """Calculate TN, FN, TP, FP, precision, recall and f1 score.
+
+    Calculates the true negative, false negative, true positive, false positive,
+    precison, recall, and multilabel f_1 score for the model predictions of a
+    supplied data sample. The F1 score is calculated according to XXXX. To offset
+    bias in multilabel sampling. Produces CSV storing performance metrics for
+    later analysis.
+
+    Parameters
+    ----------
+    model:
+        Trained model to visualise prediction of.
+    train_loader:
+        Dataloader of dataset in which input sequence to be visualised is stored.
+    name: str
+        filename to store metrics CSV under.
+    verbose: bool
+        Controls print output of metrics
+    save: bool
+        controls whether metrics will be saved in csv
+
+    Returns
+    -------
+    list:
+        true negative, false negative, true positive, false positive,
+        precison, recall, and multilabel f_1 score for the model predictions.
+    """
     model.eval()
     # calculate x and prediction
     for a, b in train_loader:
@@ -1536,8 +1651,33 @@ def metrics(model, train_loader, name = 'default', verbose = True, save = True):
             f.write(str(i) + "\n")
 
         f.close()
+    return [tn, fn, tp, fp, prec, rec, f_1]
 
 def area_under_curve_metrics(model, train_loader, name = 'default', verbose = True, save = True):
+    """Calculates the Area Under the Reciever Operator Charactersitc (AUROC)
+    curve and the Area Under the Precision Recall (AUPR) curve. Uses
+    average_precision_score to calculate AUPR.
+
+    Parameters
+    ----------
+    model:
+        Trained model to visualise prediction of.
+    train_loader:
+        Dataloader of dataset in which input sequence to be visualised is stored.
+    name: str
+        filename to store metrics CSV under.
+    verbose: bool
+        Controls print output of metrics
+    save: bool
+        controls whether metrics will be saved in csv
+
+    Returns
+    -------
+    list:
+        list of [AUROC, AUPR]
+
+
+    """
     sig = nn.Sigmoid()
     model.eval()
     # calculate x and prediction
@@ -1570,8 +1710,31 @@ def area_under_curve_metrics(model, train_loader, name = 'default', verbose = Tr
             f.write(str(i) + "\n")
 
         f.close()
+    return [r, av]
 
 def brier_score(model, train_loader, name = 'default', verbose = True, save = True):
+    """Calculates the average brier score for each prediction. Saves prediction
+    in metrics csv.
+
+    Parameters
+    ----------
+    model:
+        Trained model to visualise prediction of.
+    train_loader:
+        Dataloader of dataset in which input sequence to be visualised is stored.
+    name: str
+        filename to store metrics CSV under.
+    verbose: bool
+        Controls print output of metrics
+    save: bool
+        controls whether metrics will be saved in csv
+
+    Returns
+    -------
+    float:
+        brier score.
+
+    """
     model.eval()
     # calculate x and prediction
     for a, b in train_loader:
@@ -1597,13 +1760,39 @@ def brier_score(model, train_loader, name = 'default', verbose = True, save = Tr
         f = open(name + "metrics.csv", 'a')
         f.write(str(brier) + "\n")
         f.close()
+    return brier
 
 def full_metrics(model, train_loader, name = 'default'):
+    """extracts all performance metrics from one data sample.
+
+    Parameters
+    ----------
+    model:
+        Trained model to visualise prediction of.
+    train_loader:
+        Dataloader of dataset in which input sequence to be visualised is stored.
+    name: str
+        filename to store metrics CSV under.
+    """
     metrics(model, train_loader, name = name)
     area_under_curve_metrics(model, train_loader, name = name)
     brier_score(model, train_loader, name = name)
 
 def curves(model, train_loader):
+    """PLots ROC curves for diagonal pixels in image prediction
+
+    Plots ROC curves for diagonal pixels in the image predictions.This is done
+    to reduce overcrowding of plots.
+
+    Parameters
+    ----------
+    model:
+        Trained model to visualise prediction of.
+    train_loader:
+        Dataloader of dataset in which input sequence to be visualised is stored.
+
+
+    """
 #     dataframe = pd.dataframe()
     sig = nn.Sigmoid()
     model.eval()
