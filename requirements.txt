@@ -1,3 +1,8 @@
-numpy>=1.14.0
-pandas>=0.23.0
-
+torch>=1.1.0
+torchvision>=0.2.2
+numpy>=1.16.4
+sklearn>=0.21.2
+matplotlib>=2.2.3
+h5py>=2.9.0
+pandas>=0.25.0
+cartopy>= 0.17.0
