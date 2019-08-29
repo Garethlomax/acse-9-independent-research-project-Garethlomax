@@ -64,10 +64,6 @@ def monotonic_date(date, baseline = [1989, 1, 1]):
     """
 
     date = date_to_int_list(date)
-#    print(type(date[0]))
-#    print(type(baseline[0]))
-    # turns date since baseline start date into a monotonic function based on
-    # year and months in line with pgm unit of analysis
     return date[1] - baseline[1] + ((date[0] - baseline[0]) * 12)
 
 
@@ -100,22 +96,20 @@ def construct_layer(dataframe, key, prio_key = "gid", debug = False):
         array of height 360, width 720 containing the selected parameter arranged
         spatially into the corresponding PRIO grid cell.
     """
-    # returns 360 720 grid layer for a given parameter
-    # should be given for one parameter per year.
+
+    # PRIO grid is 360 * 720
     array = np.zeros(360*720)
     prio_grid = dataframe[prio_key]
     for i in range(len(prio_grid)):
         j = prio_grid.iloc[i] - 1
-        """change the below to only be in the case it isnt nan""" # will this cause problems?
         array[j] += dataframe[key].iloc[i]
     array.resize(360,720)
-
     return array
 
 
 """ UPDATE THIS FUNCTION"""
 
-def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, key_list_ucdp, start = [1989, 1,1], stop = [2014,1,1]):
+def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, key_list_ucdp, start = [1989, 1,1], stop = [2014,1,1], verbose = False):
     """Constructs Series of global representations of PRIO and UCDP conflict predictors
 
     Constructs Series of global representations of PRIO and UCDP conflict
@@ -155,15 +149,15 @@ def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, k
             cell.
     """
     #stop  = '2014-01-01'
-    # need to adapt ged and other year / month vs ged database for this.
-    # bool prio to add multiples of 12 to each year usin prio grid.
     num_month = monotonic_date(stop, start)
-    print(num_month)
     comb_channel_len = len(key_list_prio) + len(key_list_ucdp)
-    print(comb_channel_len)
+
     array = np.zeros((num_month, comb_channel_len, 360,720))
-    """commented out here aswell"""
     stop = date_to_int_list(stop)
+
+    if verbose:
+            print(num_month)
+            print(comb_channel_len)
 
     month = 0
     extract_month = monotonic_date('2012-01-01')
@@ -173,7 +167,8 @@ def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, k
 
             array[month][:len(key_list_ucdp)] = construct_channels(dataframe_ucdp[dataframe_ucdp.mon_month == extract_month], key_list = key_list_ucdp, prio_key = "priogrid_gid")
             array[month][len(key_list_ucdp):] = construct_channels(dataframe_prio[dataframe_prio.year == i], key_list = key_list_prio, prio_key = 'gid')
-            print(extract_month)
+            if verbose:
+                print(extract_month)
 
             month += 1
             extract_month +=1
@@ -210,7 +205,6 @@ def construct_channels(dataframe, key_list, prio_key = "gid"):
         dimension (len(key_list, 360, 720). Each pixel represents the predictor
         value at a particular grid cell.
     """
-    # usually used for prio
     array = np.zeros((len(key_list), 360, 720))
     for i, keys in enumerate(key_list):
         array[i] = construct_layer(dataframe, key = keys, prio_key = prio_key)
@@ -219,44 +213,44 @@ def construct_channels(dataframe, key_list, prio_key = "gid"):
 
 """check how we are dealing with cases that go up to and including the final step"""
 
-def construct_sequence(dataframe, key_list, prio_key = 'gid', start = [1989, 1, 1], stop = [2014,1,1], prio = False):
-    stop  = '2014-01-01'
-    # need to adapt ged and other year / month vs ged database for this.
-    # bool prio to add multiples of 12 to each year usin prio grid.
-    num_month = monotonic_date(stop, start)
-
-
-
-
-    if prio == False:
-        # i.e if doing ucdp
-        # presumes adapted ucdp
-        # seq length, channels, height, width
-        array = np.zeros((num_month, len(key_list), 360, 720))
-
-        for month in range(num_month):
-            array[month] = construct_channels(dataframe[dataframe.mon_month == month], key_list = key_list, prio_key = "priogrid_gid")
-
-            # now for
-#            array[i] =
-    elif prio:
-        stop = [2014,1,1]
-        array = np.zeros((num_month, len(key_list), 360, 720))
-        # now for the prio grid data.
-        # need to make up remainder of start year,
-        # then multiples of 12 for each year
-        # then remainder of end year.
-
-        """this presumes start dates @ start of year no more no less"""
-        # need to plus one at the end
-        month = 0
-        for i in range(start[0], stop[0]):
-            for j in range(12): # for each month
-                array[month] = construct_channels(dataframe[dataframe.year == i], key_list = key_list, prio_key = 'gid')
-                print(month)
-
-                month += 1
-        del month
+#def construct_sequence(dataframe, key_list, prio_key = 'gid', start = [1989, 1, 1], stop = [2014,1,1], prio = False):
+#    stop  = '2014-01-01'
+#    # need to adapt ged and other year / month vs ged database for this.
+#    # bool prio to add multiples of 12 to each year usin prio grid.
+#    num_month = monotonic_date(stop, start)
+#
+#
+#
+#
+#    if prio == False:
+#        # i.e if doing ucdp
+#        # presumes adapted ucdp
+#        # seq length, channels, height, width
+#        array = np.zeros((num_month, len(key_list), 360, 720))
+#
+#        for month in range(num_month):
+#            array[month] = construct_channels(dataframe[dataframe.mon_month == month], key_list = key_list, prio_key = "priogrid_gid")
+#
+#            # now for
+##            array[i] =
+#    elif prio:
+#        stop = [2014,1,1]
+#        array = np.zeros((num_month, len(key_list), 360, 720))
+#        # now for the prio grid data.
+#        # need to make up remainder of start year,
+#        # then multiples of 12 for each year
+#        # then remainder of end year.
+#
+#        """this presumes start dates @ start of year no more no less"""
+#        # need to plus one at the end
+#        month = 0
+#        for i in range(start[0], stop[0]):
+#            for j in range(12): # for each month
+#                array[month] = construct_channels(dataframe[dataframe.year == i], key_list = key_list, prio_key = 'gid')
+#                print(month)
+#
+#                month += 1
+#        del month
 
 
 
@@ -280,7 +274,7 @@ def construct_sequence(dataframe, key_list, prio_key = 'gid', start = [1989, 1, 
 #                array[j]
 
 
-    return array
+#    return array
 
 
 def date_column(dataframe, baseline = [1989,1,1], date_start_key = "date_start"):
@@ -302,18 +296,13 @@ def date_column(dataframe, baseline = [1989,1,1], date_start_key = "date_start")
         Dataframe key for the column containing date starts
 
     """
-    # puts new column on dataframe, no need to return.
-    # date start just as dummy atm
-#    dataframe = dataframe["date_start"]
+    # find string dates in dataframe
     vals = dataframe[date_start_key].values
     new_col = np.array([monotonic_date(string_date) for string_date in vals])
     dataframe["mon_month"] = new_col
 
 def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
-    # this is for saving the default 360:720 file to chop out of.
-    # lazy loading saves the day
-    # all day
-    # every day
+    # this is for saving the default 360:720 file to extract sequences from
     f = h5py.File("{}.hdf5".format(filename), "w")
 
     f.create_dataset("data_combined", data = data_array)
@@ -322,7 +311,7 @@ def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
 
 
 
-    csv = open(name + "_config.csv", 'w')
+    csv = open(filename + "_config.csv", 'w')
     csv.write("Included data UCDP:\n")
     for key in key_list_ucdp:
         csv.write(key + "\n")
@@ -347,7 +336,7 @@ def raster_test(input_data, chunk_size = 16):
     # step size is always 1
     # assuming image is a cutout of globe
     # this is for single step, single channel as a test.
-    step = 1
+
     height = input_data.shape[-2]
     width = input_data.shape[-1]
     for i in range(height - chunk_size + 1):
@@ -367,7 +356,7 @@ def raster_selection(input_data, chunk_size = 16):
     # step size is always 1
     # assuming image is a cutout of globe
     # this is for single step, single channel as a test.
-    step = 1
+
     height = input_data.shape[-2]
     width = input_data.shape[-1]
     # this is not efficient.
@@ -410,8 +399,8 @@ def random_pixel_bounds(i, j, chunk_size = 16):
 
     height = random.randint(0, chunk_size-1)
     width = random.randint(0, chunk_size-1)
-    # this randomly generates a of the image for where the pixel may be located
-    # randomly in the cut out image.
+    # this randomly generates a subsample of the image in which the chosen pixel
+    #is located randomly in the cut out image.
     i_lower = i - height
     i_upper = i + (chunk_size - height)
 
@@ -495,26 +484,12 @@ def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, clust
     if debug:
         print("Image shape is:" , image.shape)
 
-
-    # decide if this is going to be h5py loaded.
-
-    # decide what sequence step is going to be like and how to return it
-
     # image is seq, channels, height, width
-
-    # here we are using a seq length of 10. - could use 12 but atm we go for 10.
-
-    # sequence step is the step at which the TRUTH is being extracted. the predictor sequence
-    # is extracted from the 10 preceding steps. be careful to send in from i > 11
     assert sequence_step > 10, ("This function selects the datapoints from this test set that contain"
                                 "a conflict event and then selects predictor data from the 10 preceding steps"
                                 " as a result i > 10 must be true")
-    # for sequence step, 0th layer - i.e fatalities
+    # locate events occuring in the first channel
     y, x = np.where(image[sequence_step][0] >= 1)
-#     print(y)
-#     print(x)
-
-
 
     """INCLUDE CLUSTERING IN HERE?????"""
     if cluster:
@@ -523,35 +498,24 @@ def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, clust
         # correct this but answer is this shape
         np.hstack((a.reshape((-1,1)), b.reshape((-1,1))))
 
-
     if debug:
         print(x.shape)
 
     truth_list = []
     predictor_list = []
 
-    # re arange for loops for speed?
     for i,j in zip(y, x): # now over sites where fatalities have occured
         for _ in range(draws):
             i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(i, j, chunk_size=chunk_size)
 
-            # now need to work out how to store these. how to stack ontop ect.
             truth = image[sequence_step][0,i_lower:i_upper,j_lower:j_upper]
-            # check these dimensions
-            """fixed here"""
             predictors = image[sequence_step-10:sequence_step, :,i_lower:i_upper,j_lower:j_upper]
 
-            # if statement here to decide whether will be appended to full list
-            # i.e if it reaches the cutoff for acceptable level of conflict.
-#             print(np.count_nonzero(predictors[:,0]))
-#             print(sequence_step)
-#             print(predictors.shape)
             if (np.count_nonzero(predictors[:,0]) >= min_events):
                 truth_list.append(truth)
                 predictor_list.append(predictors)
 
-    # finally we combine the previous arrays.
-
+    # finally we combine the selected arrays.
     return np.stack(predictor_list, axis= 0), np.stack(truth_list, axis = 0)
 
 
@@ -638,6 +602,9 @@ def full_dataset_h5py(image, filename, key_list_prio, key_list_ucdp, chunk_size 
                 f.create_dataset("truth", data= t2, maxshape=(None,None,None))
 
             else:
+                # expand the dataset depending on how many samples we extract
+                # that meet thresholds. This is a random process so cannot
+                # predefine file size.
                 f["predictor"].resize((f["predictor"].shape[0] + t1.shape[0]), axis = 0) # expand dataset
                 f["truth"].resize((f["truth"].shape[0] + t2.shape[0]), axis = 0)
 
@@ -708,8 +675,7 @@ def find_avg_lazy_load(data, div = 10000):
         List of standard deviations for each channel in the inout image sequence
         dataset.
     """
-    # file name is name of hdf5 file
-#     data = h5py.File(filename, 'r')
+
     predictor = data["predictor"]
     channel_num = predictor.shape[2]
     avg = np.zeros(channel_num)
@@ -723,12 +689,6 @@ def find_avg_lazy_load(data, div = 10000):
         batch_std = 0
         for j in range(int(len(predictor)/div)):
 
-
-#            a += np.sum(l[i *div : (i+1)*div])
-#            b += np.sum(l[i *div : (i+1)*div] * l[i *div : (i+1)*div])
-
-
-
             batch_avg += np.sum(predictor[j * div: (j+1)*div,:,i])
 
             batch_std += np.sum(predictor[j * div: (j+1)*div,:,i] * predictor[j * div: (j+1)*div,:,i])
@@ -738,14 +698,7 @@ def find_avg_lazy_load(data, div = 10000):
 
         batch_avg += np.sum(predictor[int(len(predictor)/div)*div: len(predictor),:,i])
         batch_std += np.sum(predictor[int(len(predictor)/div)*div: len(predictor),:,i]*predictor[int(len(predictor)/div)*div: len(predictor),:,i])
-#
-#a /= np.prod(l.shape)
-#    print(a)
-#    print(np.average(l))
-#    b /= np.prod(l.shape)
-#    print(np.sqrt(b - a**2))
-#    print(np.std(l))
-#
+
         sing_chan_shape = np.array(predictor.shape)
         sing_chan_shape[2] = 1
         batch_avg /= np.prod(sing_chan_shape)
@@ -779,7 +732,7 @@ def mod_overlap(module_1, module_2):
     lists_overlap(dir(module_1), dir(module_2))
 
 def index_return(ind, x_dim, y_dim):
-    """"""
+
     x_out = ind % x_dim
     y_out = int(ind / x_dim)
     return y_out, x_out
@@ -813,15 +766,11 @@ def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
 
     round_long = round(long)
     round_lat = round(lat)
-#    print(round_lat)
 
     long = np.where(long_dummy == round_long)
     lat = np.where(lat_dummy == round_lat)
-#    lat  = y_dim - lat[0][0]
-#    long = x_dim - long[0][0]
     lat  = lat[0][0]
     long = long[0][0]
-#    print(lat)
     return long, lat
 
 def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_colour = 'black'):
@@ -853,44 +802,24 @@ def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_co
     east = 51.2752
     plt.figure()
     ax = plt.axes(projection=ccrs.PlateCarree())
-##
-###plt.contourf(y, x, z, 60,
-###             transform=ccrs.PlateCarree())
-##
-##
-#    test_array = np.fliplr(test_array)
-#    test_array = np.flipud(test_array)
+
 
     y = np.arange(-90,90,0.5)
     x = np.arange(-180,180,0.5)
     xx, yy = np.meshgrid(x,y)
 
-#    ax = plt.axes(projection=ccrs.PlateCarree())
-##
-###plt.contourf(y, x, z, 60,map
-###             transform=ccrs.PlateCarree())
-##
-##
-#    test_array = np.fliplr(test_array)
-#    test_array = np.flipud(test_array)
+
 
     ax.coastlines(color = border_colour)
-#    states_provinces = cfeature.NaturalEarthFeature(
-#        category='cultural',
-#        name='admin_1_states_provinces_lines',
-#        scale='50m',
-#        facecolor='none')
     ax.add_feature(cfeature.BORDERS, edgecolor='black')
-#    ax.
-#    loc_list = [[north,west ],[north, east],[south, east], [south, west], [north, west]]
+
+    #plot box around africa
     loc_b = [north, north, south, south, north]
     loc_a = [west, east, east, west, west]
     ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
 
     cmap = cm.get_cmap(name = colour)
-
     ax.pcolormesh(xx, yy, test_array,vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree(), cmap = cmap)
-
     plt.show()
 
 

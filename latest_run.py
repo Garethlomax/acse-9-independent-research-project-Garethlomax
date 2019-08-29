@@ -333,8 +333,6 @@ class LSTMmain(nn.Module):
     debug: boolean
         Controls print statements for debugging
 
-
-
     """
 
 
@@ -448,11 +446,6 @@ class LSTMmain(nn.Module):
         # stores initial hidden states for each layer.
         empty_start_vectors = []
 
-        #### new method of copying vectors. copy_bool, assigned during object
-        # construction now deals with copying in values.
-        # copy in is still used to supply the tensor values.
-
-        # if copy bool is true for this layer
         k = 0 # to count through our input state list.
         for i in range(self.layers):
             if self.copy_bool[i]:
@@ -466,7 +459,7 @@ class LSTMmain(nn.Module):
                 assert self.copy_bool[i] == False, "copy_bool arent bools"
 
                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second
-                h_shape[1] = self.dummy_list[i+1] # check indexing.
+                h_shape[1] = self.dummy_list[i+1]
                 # append new hidden state and cell memory
                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
 
@@ -544,6 +537,9 @@ class LSTMmain(nn.Module):
 # test2 = LSTMmain(shape, 1, 3, 5, [1], test_input = [1,2], debug = False).double()
 
 
+        """TODO: MAKE KERNEL SIZE A LIST SO CAN SPECIFY AT EACH JUNCTURE."""
+        """STRUCTURE IS AN ARRAY - CANNOT USE [] + [] LIST CONCATENATION - WAS ADDING ONE ONTO THE ARRAY THING."""
+        """TODO: ASSERT THAT DATATYPE IS INT."""
 
 class LSTMencdec_onestep(nn.Module):
     """Class to allow easy construction of ConvLSTM Encoder-Decoder models
@@ -603,20 +599,18 @@ class LSTMencdec_onestep(nn.Module):
 
 
         super(LSTMencdec_onestep, self).__init__()
-#         assert isinstance(structure, np.array), "structure should be a 2d numpy array"
         assert len(structure.shape) == 2, "structure should be a 2d numpy array with two rows"
+
         self.debug = debug
 
-        """TODO: MAKE KERNEL SIZE A LIST SO CAN SPECIFY AT EACH JUNCTURE."""
+        # shape of input
         shape = [1,10,3,16,16]
 
         self.structure = structure
-        """STRUCTURE IS AN ARRAY - CANNOT USE [] + [] LIST CONCATENATION - WAS ADDING ONE ONTO THE ARRAY THING."""
         self.input_channels = input_channels
         self.kernel_size = kernel_size
 
-        """TODO: ASSERT THAT DATATYPE IS INT."""
-
+        # extract arguments for encoder and decoder constructors from structure
         self.enc_shape, self.dec_shape, self.enc_copy_out, self.dec_copy_in = self.input_test()
 
         if self.debug:
@@ -628,11 +622,12 @@ class LSTMencdec_onestep(nn.Module):
 
 
 
-#         self.sig = nn.Sigmoid()
 
-         # why does this have +1 at third input and decoder hasnt??????
+        # why does this have +1 at third input and decoder hasnt??????
 
+        #initialise encoder and decoder structures
         self.encoder = LSTMmain(shape, self.input_channels, len(self.enc_shape)+1, self.kernel_size, layer_output = self.enc_copy_out, test_input = self.enc_shape, copy_bool = [False for k in range(len(self.enc_shape))]  ).cuda()
+
         # now one step in sequence
         shape = [1,1,1,64,64]
 
@@ -670,13 +665,8 @@ class LSTMencdec_onestep(nn.Module):
         enc_shape = enc_layer[enc_layer!=0]
         dec_layer = self.structure[1]
         dec_shape = dec_layer[dec_layer!=0]
-#
 
-
-
-
-
-        #set up boolean grid of where the overlaps are.
+        # find vertical overlaps between non zero elements
         for i in range(len(enc_layer)):
             if self.debug:
                 print(enc_layer[i], dec_layer[i])
@@ -688,18 +678,12 @@ class LSTMencdec_onestep(nn.Module):
 
         enc_overlap = copy_grid[:len(enc_layer)-1]
 
-        num_dec_zeros = len(dec_layer[dec_layer==0]) # will this break if no zeros?
+        num_dec_zeros = len(dec_layer[dec_layer==0])
 
         dec_overlap = copy_grid[num_dec_zeros:]
 
         return enc_shape, dec_shape, enc_overlap, dec_overlap
 
-#         dec_overlap = copy_grid[]
-
-
-
-#         [[1,2,3,0],
-#          [0,2,3,1]]
     def forward(self, x):
         """Forward method of LSTMencdec
 
@@ -718,36 +702,20 @@ class LSTMencdec_onestep(nn.Module):
             Tensor image prediction of size (minibatch size, sequence length,
             channels, height, width)
         """
-
-
-
+        # pass inputs to encoder
         x, out_states = self.encoder(x, copy_in = False, copy_out = self.enc_copy_out)
 
-#         print("length of out_states:", len(out_states))
-#         print("contents out outstates are as follows:")
-#         for i in out_states:
-#             print("----------------------------------")
-#             print("first object type:", type(i[0]))
-# #             print("length of object:", len(i[0]))
-
-
-
-
-        dummy_input = torch.zeros(x.shape)
-        # technically a conditional loader - put x in there
-        # puts in the last one as input - should make shorter.
-        # presume coming out in the correct order - next try reversing to see if that helps
+        # select last input of encoder for conditional encoder decoder model.
         x = x[:,-1:,:,:,:]
-#         print("x shape encoder:", x.shape)
-#         print(x.shape)
-
 
         res, _ = self.decoder(x, copy_in = out_states, copy_out = [False, False, False,False, False])
-        print("FINISHING ONE PASS")
-#         res = self.sig(res)
+        if self.debug:
+            print("FINISHING ONE PASS")
         return res
 
 """# dataset"""
+        """TODO: CHECK IF THIS RETURNS DOUBLE"""
+
 
 class HDF5Dataset(Dataset):
     """dataset wrapper for hdf5 dataset to allow for lazy loading of data. This
@@ -773,25 +741,12 @@ class HDF5Dataset(Dataset):
             in the dataframe would be returned. This provides less overhead than
             shuffling each selection
         """
-#         %cd /content/drive/My \Drive/masters_project/data
-        # changes directory to the one where needed.
-
         self.path = path
 
         self.index_map = index_map # maps to the index in the validation split
         # due to hdf5 lazy loading index map must be in ascending order.
-        # this may be an issue as we should shuffle our dataset.
-        # this will be raised as an issue as we consider a work around.
-        # we should keep index map shuffled, and take the selection from the
-        # shuffled map and select in ascending order.
-
 
         self.file = h5py.File(path, 'r')
-
-
-
-
-
 
     def __len__(self):
         return len(self.index_map)
@@ -799,11 +754,13 @@ class HDF5Dataset(Dataset):
     def __getitem__(self,i):
 
         i = self.index_map[i] # index maps from validation set to select new orders
-#         print(i)
-        if isinstance(i, list): # if i is a list.
-            i.sort() # sorts into ascending order as specified above
 
-        """TODO: CHECK IF THIS RETURNS DOUBLE"""
+        if isinstance(i, list):
+            # i is only a list when using fancy or random indexing
+            # sorts into ascending order as hdf5 may only be queried in ascending
+            # order
+            i.sort()
+
 
         predictor = torch.tensor(self.file["predictor"][i])
 
@@ -858,6 +815,8 @@ def initialise_dataset_HDF5_full(dataset, valid_frac = 0.1, dataset_length = 900
 
     Parameters
     ----------
+    dataset: str
+        filename / path to hdf5 file.
     valid_frac: float
         fraction of the loaded dataset to portion to validation
     dataset_length: int
@@ -881,7 +840,7 @@ def initialise_dataset_HDF5_full(dataset, valid_frac = 0.1, dataset_length = 900
 
     if valid_frac != 0:
 
-        dummy = np.array(range(dataset_length)) # clean this up - not really needed
+        dummy = np.array(range(dataset_length))
 
         train_index, valid_index = validation_split(dummy, n_splits = 1, valid_fraction = 0.1, random_state = 0)
 
@@ -944,6 +903,19 @@ def unsqueeze_data(data):
 
 """#TRAINING FUNCTIONS"""
 # talk about this later.
+
+#         loss = comb_loss_func(prediction, y)
+#         print(prediction.shape)
+#         print(y[:,:1,:,:,:].shape)
+        """commented out """
+#         loss = - loss_func(prediction[:,0,:,:,:], y[:,0,:,:,:])
+
+# ssim_out = -ssim_loss(train[0][0][-1:],  x[0])
+# ssim_value = - ssim_out.data
+
+
+
+
 def comb_loss_func(pred, y):
     """hopefully should work like kl and bce for VAE"""
     mse = nn.MSELoss()
@@ -952,7 +924,11 @@ def comb_loss_func(pred, y):
     ssim_loss = -ssim(pred[:,0,:,:,:], y[:,0,:,:,:])
     return mse_loss + ssim_loss
 
-# %cd /content/drive/My\ Drive/masters_project/data/models
+        """THIS DOESNT DEAL WITH SEQUENCE LENGTH VARIANCE OF PREDICTION OR Y"""
+
+        """ACTUAL FUNCTION THATS BEEN COMMENTED OUT."""
+#         loss = loss_func(prediction, y[:,:1,:,:,:])
+        """CHANGED BECAUSE """
 def train_enc_dec(model, optimizer, dataloader, loss_func = nn.MSELoss(), verbose = False):
     """Training function for encoder decoder models.
 
@@ -980,86 +956,60 @@ def train_enc_dec(model, optimizer, dataloader, loss_func = nn.MSELoss(), verbos
         Average loss per sample for the training epoch
     """
     i = 0
-    model.train() # enables training for model.
+    model.train()
+    # model now tracks gradients
     tot_loss = 0
     for x, y in dataloader:
-#         print("training")
-        x = x.to(device) # send to cuda.
+        x = x.to(device) # Copy image tensors onto GPU(s)
         y = y.to(device)
-        optimizer.zero_grad() # zeros saved gradients in the optimizer.
+        optimizer.zero_grad()
+        # zeros saved gradients in the optimizer.
         # prevents multiple stacking of gradients
-        # this is important to do before we evaluate the model as the
-        # model is currenly in model.train() mode
 
-        prediction = model(x) #x should be properly formatted - of size
-        """THIS DOESNT DEAL WITH SEQUENCE LENGTH VARIANCE OF PREDICTION OR Y"""
+        prediction = model(x)
 
-#         print("the size of prediction is:", prediction.shape)
-        #last image sequence.
-
-        """ACTUAL FUNCTION THATS BEEN COMMENTED OUT."""
-#         loss = loss_func(prediction, y[:,:1,:,:,:])
-        """CHANGED BECAUSE """
         if verbose:
             print(prediction.shape)
             print(y.shape)
         loss = loss_func(prediction[:,0,0], y)
 
+        # differentiates model parameters wrt loss
+        loss.backward()
 
-#         loss = comb_loss_func(prediction, y)
-#         print(prediction.shape)
-#         print(y[:,:1,:,:,:].shape)
-        """commented out """
-#         loss = - loss_func(prediction[:,0,:,:,:], y[:,0,:,:,:])
+        optimizer.step()
+        # steps forward model parameters
 
-# ssim_out = -ssim_loss(train[0][0][-1:],  x[0])
-# ssim_value = - ssim_out.data
+        tot_loss += loss.item()
 
-
-
-        loss.backward() # differentiates to find minimum.
-#         printm()
-
-        ##
-
-    # implement the interpreteable stuff here.
-        # as it is very unlikely we predict every pixel correctly we will not
-        # use accuracy.
-        # technically this is a regression problem, not a classification.
-
-
-        optimizer.step() # steps forward the optimizer.
-        # uses loss.backward() to give gradient.
-        # loss is negative.
-#         del x # make sure the garbage is collected.
-#         del y
-        """commented it out"""
-        tot_loss += loss.item() # .data.item()
         if verbose:
             print("BATCH:")
             print(i)
         i += 1
-#         if i == 20:
-#             break
+
         if verbose:
             print("MSE_LOSS:", tot_loss / i)
         tot_loss /= i
     return model, tot_loss # trainloss, trainaccuracy
 
-def validate(model, dataloader, loss_func = nn.MSELoss()):
+def validate(model, dataloader, loss_func = nn.MSELoss(), verbose = False):
 
     """as for train_enc_dec but without training - and acting upon validation
     data set
     """
     tot_loss = 0
     i = 0
-    model.eval() # puts out of train mode so we do not mess up our gradients
-    for x, y in dataloader:
-        with torch.no_grad(): # no longer have to specify tensors
-            # as volatile = True. as of modern pytorch use torch.no_grad.
+    model.eval()
+    # model no longer tracks gradients.
 
-            x=x.to(device) # send to cuda.
+    for x, y in dataloader:
+        with torch.no_grad():
+            # no longer have to specify tensor gradients
+            # equivalent to as volatile = True for deprecated scripts.
+
+            x=x.to(device)
             y=y.to(device)
+            # send to GPU(s)
+
             prediction = model(x)
 
             loss = loss_func(prediction[:,0,0], y)
@@ -1067,7 +1017,8 @@ def validate(model, dataloader, loss_func = nn.MSELoss()):
             tot_loss += loss.item()
             i += 1
 
-            print("MSE_VALIDATION_LOSS:", tot_loss / i)
+            if verbose:
+                print("MSE_VALIDATION_LOSS:", tot_loss / i)
 
 
 
@@ -1157,68 +1108,42 @@ class HDF5Dataset_with_avgs(Dataset):
     def __init__(self, path, index_map, avg, std, application_boolean, transform = None):
         """Constructor for hdf5 dataset
         """
-#         %cd /content/drive/My \Drive/masters_project/data
-        # changes directory to the one where needed.
-
         self.path = path
 
-        self.index_map = list(index_map) # maps to the index in the validation split
-        # due to hdf5 lazy loading index map must be in ascending order.
-        # this may be an issue as we should shuffle our dataset.
-        # this will be raised as an issue as we consider a work around.
-        # we should keep index map shuffled, and take the selection from the
-        # shuffled map and select in ascending order.
+        self.index_map = list(index_map)
+        # maps from the requested __getitem__ index to the shuffled index in its
+        # place.
         self.avg = avg
         self.std = std
         self.application_boolean = application_boolean
-
         self.file = h5py.File(path, 'r')
-
-#         for i in range(len(application_boolean)):
-#             # i.e gaussian transformation doesnt happen. (x - mu / sigma)
-#             if application_boolean == 0:
-#                 self.avg[i] = 0
-#                 self.std[i] = 1
-
-
-
-
-
-
-
-
-
 
     def __len__(self):
         return len(self.index_map)
 
     def __getitem__(self,i):
 
-        i = self.index_map[i] # index maps from validation set to select new orders
-#         print(i)
-        if isinstance(i, list): # if i is a list.
-            i.sort() # sorts into ascending order as specified above
+        i = self.index_map[i]
+        # index maps to shuffled position
+        if isinstance(i, list):
+            # if i is a list.
+            # sorts into ascending order
+            i.sort()
 
         """TODO: CHECK IF THIS RETURNS DOUBLE"""
 
         predictor = torch.tensor(self.file["predictor"][i])
-#         print("predictor shape:", predictor.shape)
-        # is of batch size, seq length,
+
 
 
         truth = torch.tensor(self.file["truth"][i])
-#         print("truth shape:", truth.shape)
-        # only on layer so not in loop.
 
-#        truth -= self.avg[0]
-#        truth /= self.std[0]
-
+        #normalise along dimensions depending on fancy index use.
         if isinstance(i, list):
             for j in range(len(self.avg)):
                 if self.application_boolean[j]:
                     predictor[:,:,j] -= self.avg[j]
                     predictor[:,:,j] /= self.std[j]
-
 
         else:
             for j in range(len(self.avg)):
@@ -1226,25 +1151,11 @@ class HDF5Dataset_with_avgs(Dataset):
                     predictor[:,j] -= self.avg[j]
                     predictor[:,j] /= self.std[j]
 
-
-#             #i.e if we are returning a single index.
-# #         # the value of truth should be [0] in the predictor array.
-#         for j in range(len(self.avg)):
-#             if self.application_boolean[j]:
-#                 predictor[:,:,j] -= self.avg[j]
-#                 predictor[:,:,j] /= self.std[j]
-
-#                 # sort out dimensions of truth at some point
-
-
-
-
-
         return predictor, truth
 
-"""# wrapper"""
 
-def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_boolean, lr = None, epochs = 50, kernel_size = 3, batch_size = 50):
+
+def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_boolean, lr = None, epochs = 50, kernel_size = 3, batch_size = 50, dataset_name = 'train_fixed_25.hdf5'):
     """Training wrapper for LSTM encoder decoder models.
 
     Trains supplied model using train_enc_dec fucntions. Logs model hyperparameters
@@ -1289,18 +1200,20 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
     bool:
         indicates if training has been completed.
     """
-    f = open(name + ".csv", 'w') # open csv file for saving
+    f = open(name + ".csv", 'w')
+    # open csv file for saving
 
+    # construct model and send to GPU(s)
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(LSTMencdec_onestep(structure, 5, kernel_size = kernel_size)).to(device)
     else:
         model = LSTMencdec_onestep(structure, 5, kernel_size = kernel_size).to(device)
 
+    # pass model parameters to optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr = lr, amsgrad= True)
 
-    # put in structure.
+    # detail hyperparameters in log file
     f.write("Structure: \n")
-
     for i in range(len(structure)):
         for j in range(len(structure[0])):
             f.write("{},".format(structure[i,j]))
@@ -1310,8 +1223,6 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
     f.write("optimizer, epochs, learning rate, kernel size \n")
 
     if lr != None:
-        # optimizer problems
-
         f.write("{},{},{},{},{}\n".format("test", epochs, lr, kernel_size, batch_size))
     else:
         f.write("{},{},{},{},{}\n".format("othertest", epochs, "Default", kernel_size, batch_size))
@@ -1325,53 +1236,32 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
     f.write("\n\n\n")
     f.write("TRAINING\n")
 
-    # now we define the training functions
-#     train, valid = initialise_dataset_HDF5()
-
-#     index_map = np.arange(0, 93620,1)# dummy index_map just to make sure trains correctly.
-#     train = HDF5Dataset_with_avgs('data_prio_run_test5.hdf5', list(index_map),avg, std, apbln)
-    """CHANGED THE ABOVE TO LIST - BETTER INDEXING?"""
-    # put model together with different size
-    # model test - put it together.
-    # now we train the model
-
-    train, valid = initialise_dataset_HDF5_full('train_fixed_25.hdf5', valid_frac = 0.1, dataset_length = 56413,avg = avg, std = std, application_boolean=application_boolean)
-
-
-
-    # ignore this one.
-
-#     model, optimizer = train_main(test_model, 1, train, valid, epochs = epochs, batch_size = 50)
+    f.close()
+    # initialise training and validation datasets.
+    train, valid = initialise_dataset_HDF5_full(dataset_name, valid_frac = 0.1, dataset_length = 56413,avg = avg, std = std, application_boolean=application_boolean)
 
     loss_func = loss_func
 
-#     optimizer = torch.optim.Adam(model.parameters(), lr = lr, amsgrad= True)
-
-#     loss_func = nn.BCELoss()
-#     loss_func = pytorch_ssim.SSIM()
-    f.close()
-
+    # pass datasets to dataloaders
     train_loader = DataLoader(train, batch_size = batch_size, shuffle = True) # implement moving MNIST data input
     valid_loader = DataLoader(valid, batch_size = 2000, shuffle = False) # implement moving MNIST
 
     for epoch in range(epochs):
 
-        # does is matter that we arent returning the model?
+        # train the model
         _, loss = train_enc_dec(model, optimizer, train_loader, loss_func = loss_func) # changed
 
+        # save for checkpointing
         torch.save(optimizer.state_dict(), name+str(epoch)+"optimizer.pth")
         torch.save(model.state_dict(), name+str(epoch)+".pth")
 
+        #compute validation at each epoch
         valid_loss = validate(model, valid_loader, loss_func = loss_func) # validation - need to shuffle split.
 
-        f = open(name + ".csv", 'a') # open csv file for saving
 
+        f = open(name + ".csv", 'a')
         f.write(str(loss) + "," + str(valid_loss) + "\n")
-
         f.close()
-
-#         torch.save(optimizer.state_dict(), name+str(epoch)+".pth")
-#         torch.save(model.state_dict(), name+str(epoch)+".pth")
     return True
 
 #     f.close()
@@ -1395,23 +1285,24 @@ def test_image_save(model, train_loader, name, sample = 7):
         Filename to save visualised comparison in.
     sample: int
         Sample of the input dataset to be predicted.
+
+    Returns
+    -------
+    fig:
+        Matplotlib figure to be manipulated outside of program.
     """
     model.eval()
     # calculate x and prediction
     for a, b in train_loader:
         # a in input, b is truth
-        break # train loader cannot be indexed
+        break
 
 
     with torch.no_grad():
         x = model(a.cuda())
 
     x = x.cpu()
-
-
-
-
-
+    # return our prediction from GPU to CPU to be accessed by matplotlib
 
     fig, axes = plt.subplots(1,2)
     print(x.shape)
@@ -1423,16 +1314,10 @@ def test_image_save(model, train_loader, name, sample = 7):
     axes[0].set_title("Prediction")
     fig.suptitle("Prediction of:" + name)
     fig.savefig(name + "comparison.pdf")
-#     print(b[7])
-#     print(x[7][0][0])
     fig, axes = plt.subplots(10,1,figsize=(32,32))
     for i in range(10):
         axes[i].imshow(a[sample][i][0])
-
-
-
-""" FROM MODEL_TESTING_HPC"""
-
+    return fig
 
 def f1(model, train_loader, avg = 'macro'):
     """Produces average F1 score for each image prediction in the dataset.
@@ -1447,13 +1332,16 @@ def f1(model, train_loader, avg = 'macro'):
         method of averaging over each multilabel image. see sklearn.metrics.f1_score
         for specification of the average key types
 
-
+    Returns
+    -------
+    list:
+        List of scores for each image sequence prediction
     """
     model.eval()
     # calculate x and prediction
     for a, b in train_loader:
         # a in input, b is truth
-        break # train loader cannot be indexed
+        break
 
 
     with torch.no_grad():
@@ -1463,14 +1351,6 @@ def f1(model, train_loader, avg = 'macro'):
     x = x.cpu()
     x[x>0] = 1
     x[0>x] = 0
-#     print(x[0][0][0])
-    print(x[222,0,0].shape)
-    print(b[222].shape)
-#     print(b)
-    print(b[222].view(-1, 256).numpy().shape)
-    truth = set(list(b[222].view(256).numpy()))
-    pred = set(list(x[222,0,0].view(256).numpy()))
-    print(truth - pred)
     scores = []
     for i in range(len(b)):
         score = f1_score(b[i].view(256).numpy(), x[i,0,0].view(256).numpy(), average=avg)
@@ -1478,10 +1358,8 @@ def f1(model, train_loader, avg = 'macro'):
         truth = set(list(b[i].view(256).numpy()))
         pred = set(list(x[i,0,0].view(256).numpy()))
         if len(truth - pred) > 0:
-            print(i)
-#     score = f1_score(b[222].numpy(), b[222].numpy(), average=avg)
+            print("sample" + i + " is a poor prediction and should be investigated")
     return scores
-#     print(score)
 
 
 
@@ -1521,12 +1399,10 @@ def metrics(model, train_loader, name = 'default', verbose = True, save = True):
     # calculate x and prediction
     for a, b in train_loader:
         # a in input, b is truth
-        break # train loader cannot be indexed
-
+        break
 
     with torch.no_grad():
         x = model(a.cuda())
-
 
     x = x.cpu()
     x[x>0] = 1
@@ -1540,8 +1416,9 @@ def metrics(model, train_loader, name = 'default', verbose = True, save = True):
     fn = 0
     fp = 0
 
-    print(truth.shape)
-    print(pred.shape)
+    if verbose:
+        print(truth.shape)
+        print(pred.shape)
     for i in range(len(b)):
         for j in range(256):
             # true positive
@@ -1606,6 +1483,7 @@ def area_under_curve_metrics(model, train_loader, name = 'default', verbose = Tr
 
 
     """
+
     sig = nn.Sigmoid()
     model.eval()
     # calculate x and prediction
@@ -1613,18 +1491,13 @@ def area_under_curve_metrics(model, train_loader, name = 'default', verbose = Tr
         # a in input, b is truth
         break # train loader cannot be indexed
 
-
     with torch.no_grad():
         x = model(a.cuda())
 
     x = x.cpu()
     truth = b.view(-1,256).numpy()
     pred = sig(x[:,0,0].view(-1,256)).numpy()
-#     truth = b.contiguous().view(-1).numpy()
-#     pred = sig(x[:,0,0].contiguous().view(-1)).numpy()
-#     fpr, tpr, thresholds = roc_curve(truth, pred)
-#     plt.plot(fpr, tpr)
-#     plt.plot(fpr, fpr)
+
     r = roc_auc_score(truth, pred)
     av = average_precision_score(truth, pred)
     if verbose:
@@ -1721,14 +1594,12 @@ def curves(model, train_loader):
 
 
     """
-#     dataframe = pd.dataframe()
     sig = nn.Sigmoid()
     model.eval()
     # calculate x and prediction
     for a, b in train_loader:
         # a in input, b is truth
-        break # train loader cannot be indexed
-
+        break
 
     with torch.no_grad():
         x = model(a.cuda())
@@ -1737,7 +1608,7 @@ def curves(model, train_loader):
     truth = b.view(-1,256).numpy()
     pred = sig(x[:,0,0].view(-1,256)).numpy()
     plt.figure()
-#     for i in range(16):
+    #over diagonal pixels
     for j in range(16):
         t = b[:,j,j].contiguous().view(-1).numpy()
         p = sig(x[:,0,0,j,j].contiguous().view(-1)).numpy()
@@ -1755,7 +1626,7 @@ def batch_loss_histogram(model, train_loader, loss_func):
     # calculate x and prediction
     for a, b in train_loader:
         # a in input, b is truth
-        break # train loader cannot be indexed
+        break
 
 
     with torch.no_grad():
@@ -1763,9 +1634,7 @@ def batch_loss_histogram(model, train_loader, loss_func):
 
 
         x = x.cpu()
-#     print(x.shape)
-    # now over each one in x - we do
-        #loss_func = nn.BCEWithLogitsLoss()
+
         loss = []
         for i in range(len(x)):
             loss.append(loss_func(x[i,:,0],b[i:i+1]).item())
