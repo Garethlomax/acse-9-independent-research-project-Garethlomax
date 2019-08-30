@@ -5,10 +5,7 @@ Created on Sun Aug 11 21:15:03 2019
 @author: Gareth
 """
 
-"""By default pytest only identifies the file names starting with test_ or ending
- with _test as the test files. We can explicitly mention other filenames though (explained later).
- Pytest requires the test method names to start with test.
- All other method names will be ignored even if we explicitly ask to run those methods."""
+
 
 import hpc_construct as cf
 import latest_run as lr
