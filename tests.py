@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import random
 import h5py
+from isolated_test_class import *
 
 def test_date_to_int_list():
     date = "2019-10-10"
