@@ -2,6 +2,7 @@
 __THE REPORT TO BE ASSESED IS: Masters_project(10).pdf__
 ## Summary
 
+[![Build Status](https://travis-ci.com/msc-acse/acse-9-independent-research-project-Garethlomax.svg?branch=master)](https://travis-ci.com/msc-acse/acse-9-independent-research-project-Garethlomax)
 
 
 Current Version: 0.1.0
