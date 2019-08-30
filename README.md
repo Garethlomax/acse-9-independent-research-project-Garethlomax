@@ -131,7 +131,7 @@ The package is designed to be use for research in the field of conflict predicti
         c_t: tensor, double
             Tensor of the new cell memory state for the current tinestep, Pytorch
             tensor of dimensions (output channels, height, width)
-###LSTMmain
+### LSTMmain
 
 
 - Implementation of ConvLSTM for use both standalone and as part of Encoder Decoder Models
@@ -192,7 +192,7 @@ The package is designed to be use for research in the field of conflict predicti
             Last hidden states of layers specified by copy_out. To be used in
             encoder LSTM to be copied into decoder LSTM as the copy_in parameter
             
-###LSTMencdec_onestep
+### LSTMencdec_onestep
 
 - Class to allow easy construction of ConvLSTM Encoder-Decoder models
 
@@ -210,13 +210,13 @@ The package is designed to be use for research in the field of conflict predicti
     would be input as: structure = [[6,12,0,],
                                     [0,12,6]]
 
-####Attributes
+#### Attributes
     
     Structure: int, list
 
 
     """
-####Methods
+#### Methods
 
 - __init__: Constructor for LSTMencdec
 
@@ -286,7 +286,7 @@ The package is designed to be use for research in the field of conflict predicti
             Tensor image prediction of size (minibatch size, sequence length,
             channels, height, width)
         """
-###HDF5Dataset_with_avgs
+### HDF5Dataset_with_avgs
 -     dataset wrapper for hdf5 dataset to allow for lazy loading of data. This allows ram to be conserved.
 As the hdf5 dataset is not partitioned into test and validation sets, the dataset
     takes a shuffled list of indices to allow specification of training and
@@ -355,7 +355,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     validation_dataset: Pytorch dataset
         Dataset containing shuffled subset of samples for validation
         
-###train_enc_dec
+###t rain_enc_dec
 
 -Training function for encoder decoder models.
 
@@ -446,7 +446,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     fig:
         Matplotlib figure to be manipulated outside of program.
     """
-###f1 
+### f1 
 """Produces average F1 score for each image prediction in the dataset.
 
     Parameters
@@ -464,7 +464,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     list:
         List of scores for each image sequence prediction
     """
-###Metrics
+### Metrics
 """Calculate TN, FN, TP, FP, precision, recall and f1 score.
 
     Calculates the true negative, false negative, true positive, false positive,
@@ -492,7 +492,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         true negative, false negative, true positive, false positive,
         precison, recall, and multilabel f_1 score for the model predictions.
     """
-###Area_under_curve_metrics
+### Area_under_curve_metrics
    """Calculates the Area Under the Reciever Operator Charactersitc (AUROC)
     curve and the Area Under the Precision Recall (AUPR) curve. Uses
     average_precision_score to calculate AUPR.
@@ -517,7 +517,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
 
 
     """
-###brier_score
+### brier_score
 """Calculates the average brier score for each prediction. Saves prediction
     in metrics csv.
 
@@ -552,7 +552,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     name: str
         filename to store metrics CSV under.
     """
-###curves
+### curves
 """PLots ROC curves for diagonal pixels in image prediction
 
     Plots ROC curves for diagonal pixels in the image predictions.This is done
@@ -567,7 +567,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
 
 
     """
-###analytics
+### analytics
     """Loads given state dict and extracts metrics.
 
     Uses test_image save and full_metrics to compile metric report in csv and
