@@ -19,15 +19,16 @@ Download git repository and run **`$ python setup.py install`** inside the direc
 
 The package dependancies and current requirements including versions are outlined in requirements.txt. These may be installed recursively using pip.
 
-The project is also dependant on Cartopy for use in coordinate transforms while plotting data. Cartopy should be installed using conda, due to its own dependancy on non pip availiable distributions. The plotting functionality that requires Cartopy is isolated to map_module. If users do not wish to use the plotting functionality they may import the other modules: 
+The project is also dependant on Cartopy for use in coordinate transforms while plotting data. Cartopy should be installed using conda, due to its own dependancy on non pip availiable distributions. The plotting functionality that requires Cartopy is isolated to map_module. If users do not wish to use the plotting functionality they may import the other modules. 
+__Note that Cartopy is not listed in the requirements.txt if downloading recursively from pip__
 
-XXXX PHOTO HERE.
+
 
 ## Functionality
-Functionality is split across 3 modules: latest_run XXXX, hpc_construct, and map_module.
+Functionality is split across 3 modules: latest_run, hpc_construct, and map_module.
 
-- latest_run contains functionality to construct and train ConvLSTM encoder decoder models.
-- hpc_construct contains functionality to produce new conflict datasets and to analyse predictions.
+- latest_run contains functionality to construct and train ConvLSTM encoder decoder models to be run on latest conflict prediction data.
+- hpc_construct contains functionality to construct new conflict datasets and to analyse predictions.
 -map_module contans functionality to visualise conflict data.
 
 ## Usage
