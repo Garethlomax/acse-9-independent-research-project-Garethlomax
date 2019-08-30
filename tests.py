@@ -63,39 +63,6 @@ def test_random_pixel_bounds():
     assert (abs(i_low)+ abs(i_high))==16, "i dimension wrong"
     assert (abs(j_low)+ abs(j_high))==16, "j dimension wrong"
 
-#def test_LSTMmain():
-#    """Test of LSTMmain
-#    """
-
-#    shape = [2,4,1,8,8]
-    #    first we have dummy test in here
-    # of example module
-
-
-def test_module_diff():
-    """Test of differentiability of module
-
-    Base other module tests on this.
-    """
-    t1 = nn.Conv2d(1,2,3).double()
-    inp = torch.zeros([1,1,9,9], dtype = torch.double, requires_grad = True)
-    t2 = t1(inp)
-    res = torch.autograd.gradcheck(t1, (inp,), eps=1e-4, raise_exception=True)
-    print(res)
-
-def test_LSTMmain_initial():
-    """Test of differentiability of LSTMmain - direct integration test with LSTMunit
-    """
-    shape = [2,4,1,8,8]
-    test_input_tensor = torch.zeros(shape, dtype = torch.double, requires_grad = True)
-
-    test2 = lr.LSTMmain(shape, 1, 3, 5, [1], test_input = [1,2], debug = False).double()
-
-    ans, _ = test2(x, copy_in = False, copy_out = [False, False, False])
-
-    res = torch.autograd.gradcheck(test2, (ans,), eps=1e-4, raise_exception=True)
-
-
 def test_random_grid_selection():
     """Test of random_grid_selection function
     """
@@ -135,16 +102,16 @@ def test_find_avg_lazy_load():
     assert avg[0] == np.average(f['predictor'])
     assert std[0] == np.std(f['predictor'])
 
-test_date_column()
-test_date_to_int_list()
-test_monotonic_date()
-test_construct_layer()
-test_binary_event_column()
-test_nan_to_one()
-test_random_pixel_bounds()
-test_random_grid_selection()
-test_full_dataset_h5py()
-test_find_avg_lazy_load()
+#test_date_column()
+#test_date_to_int_list()
+#test_monotonic_date()
+#test_construct_layer()
+#test_binary_event_column()
+#test_nan_to_one()
+#test_random_pixel_bounds()
+#test_random_grid_selection()
+#test_full_dataset_h5py()
+#test_find_avg_lazy_load()
 
 
 

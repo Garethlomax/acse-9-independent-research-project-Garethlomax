@@ -431,7 +431,7 @@ def random_selection(image, i, j, chunk_size = 16):
 
     print(image[i_lower:i_upper,j_lower:j_upper])
 
-def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, cluster = False, min_events = 0, debug = True):
+def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, cluster = False, min_events = 0, debug = False):
     """Extracts conflict image sequence samples for a given monnth.
 
     Produces conflict image sequence samples for each month from an input global
