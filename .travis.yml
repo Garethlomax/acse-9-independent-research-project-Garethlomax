@@ -1,6 +1,6 @@
 branches:
   only:
-  - tests
+  - master
 language: python
 python:
   - "3.6"

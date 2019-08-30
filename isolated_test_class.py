@@ -263,7 +263,9 @@ class LSTMmain_t(nn.Module):
 
         # initialise the different conv cells.
 #         self.unit_list = [LSTMunit(input_channel_no, hidden_channel_no, kernel_size) for i in range(self.enc_len)]
-        self.dummy_list = [input_channel_no] + list(self.test_input) # allows test input to be an array
+        self.dummy_list = [input_channel_no]
+        self.dummy_list.extend(list(self.test_input))  # allows test input to be an array
+   
         if self.debug:
             print("dummy_list:")
             print(self.dummy_list)

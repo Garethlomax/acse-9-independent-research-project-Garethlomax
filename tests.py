@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import random
 import h5py
+from isolated_test_class import *
 
 def test_date_to_int_list():
     date = "2019-10-10"
@@ -99,6 +100,24 @@ def test_find_avg_lazy_load():
     assert avg[0] == np.average(f['predictor'])
     assert std[0] == np.std(f['predictor'])
 
+def test_LSTMunit_autograd():
+    """Tests end to end differentiability of LSTMunit_t.
+    """
+    shape = [1,1,16,16]
+    x = torch.zeros(shape, dtype = torch.double, requires_grad = True)
+    h = torch.zeros([1,2,16,16], dtype = torch.double, requires_grad = True)
+    c = torch.zeros([1,2,16,16], dtype = torch.double, requires_grad = True)
+    testunit = LSTMunit_t(1,2,3).double()
+    torch.autograd.gradcheck(testunit, (x,h,c), eps=1e-4, raise_exception=True)
+
+def test_LSTMencdec():
+    """Tests end to end differentiability of LSTMencdec
+    """
+    structure = np.array([[2,4,0],[0,4,2]])
+    encdec = LSTMencdec_onestep_t(structure, 1, 5)
+    shape = [1,10,1,16,16]
+    x = torch.zeros(shape, dtype = torch.double, requires_grad = True)
+    torch.autograd.gradcheck(encdec, (x,), eps=1e-4, raise_exception=True)
 #test_date_column()
 #test_date_to_int_list()
 #test_monotonic_date()
