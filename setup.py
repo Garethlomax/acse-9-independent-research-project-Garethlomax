@@ -9,7 +9,7 @@ setuptools.setup(
 #    long_description=long_description,
 #    long_description_content_type="text/markdown",
     url="https://github.com/msc-acse/acse-9-independent-research-project-Garethlomax",
-    packages=setuptools.find_packages(),
+    packages=['conflict_lstm'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
