@@ -248,7 +248,6 @@ def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
 
 
 
-""" FROM HERE ARE THE USED AND REPEATED FUNCTIONS"""
 
 
 
