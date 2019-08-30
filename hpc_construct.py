@@ -21,6 +21,7 @@ import matplotlib.cm as cm
 import h5py
 import random
 from sklearn.neighbors import LocalOutlierFactor
+from latest_run import *
 """# FUNCTIONS"""
 
 def date_to_int_list(date):
@@ -790,3 +791,17 @@ def round(i):
     if k>0.5: # if above i.5 orrigionally
         j += 0.5
     return j
+
+def analytics(structure, kernel_size, model_path, dataset_path = 'emerg_25.hdf5', dataset_length = 4940, avg_path = "fixed_25_avg.npy", std_path = "fixed_25_std.npy", sample = 1967):
+    test_model = nn.DataParallel(LSTMencdec_onestep(structure, 5, kernel_size = kernel_size, debug = False)).to(device) # added data parrallel
+    test_model.load_state_dict(torch.load(model_path + ".pth"))
+    test_model.eval()
+
+    avg = np.load(avg_path)
+    std = np.load(std_path)
+    apbln = [0,1,0,0,1]
+    train, valid = initialise_dataset_HDF5_full(dataset_path, valid_frac = 0.1, dataset_length = dataset_length ,avg = avg, std = std, application_boolean=apbln)
+    train_loader = DataLoader(train, batch_size = 2000, shuffle = False)
+
+    test_image_save(test_model, train_loader, model_path + "comparison", sample = sample)
+    full_metrics(test_model, train_loader, model_path)
