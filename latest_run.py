@@ -74,13 +74,8 @@ def set_seed(seed):
     return True
 
 #set_seed(42)
-        """TODO: CHANGE THIS LAYOUT OF CONVOLUTIONAL LAYERS. """
-        """ TODO : DEAL WITH BIAS HERE. """
-        """ TODO: CAN INCLUDE BIAS IN ONE OF THE CONVOLUTIONS BUT NOT ALL OF THEM - OR COULD INCLUDE IN ALL? """
-        """ TODO: decide whether this should be put into function. """
-        """TODO: put correct dimensions of tensor in shape"""
-        """TODO: DEFINE THESE SYMBOLS. """
-        """TODO: PUT THIS IN CONSTRUCTOR."""
+
+
 class LSTMunit(nn.Module):
     """Base unit for an overall convLSTM structure.
 
@@ -224,87 +219,6 @@ class LSTMunit(nn.Module):
         h_t = o_t * self.tanh(c_t)
         return h_t, c_t
 
-"""# lstm full unit"""
-
-"""TODO: IMPORTANT
-WHEN COPYING STATES OVER, INITIAL STATE OF DECODER IS BOTH LAST H AND LAST C
-FROM THE LSTM BEING COPIED FROM.
-
-WE ALSO NEED TO INCLUDE THE ABILITY TO OUTPUT THE LAST H AND C AT EACH TIMESTEP
-AS INPUT.
-"""
-
-
-""" SEQUENCE, BATCH SIZE, LAYERS, HEIGHT, WIDTH"""
-
-        """TODO: USE THIS AS BASIS FOR ENCODER DECODER."""
-        """TODO: SPECIFY SHAPE OF INPUT VECTOR"""
-
-        """TODO: FIGURE OUT HOW TO IMPLEMENT ENCODER DECODER ARCHITECUTRE"""
-
-                """specify dimensions of shape - as in channel length ect. figure out once put it in a dataloader"""
-    """TODO: DECIDE ON OUTPUT OF HIDDEN CHANNEL LIST """
-
-        """loop over layers, then over hidden states
-
-        copy_in is either False or is [[h,c],[h,c]] ect.
-
-        THIS IN NOW CHANGED TO COPY IN
-
-        """
-
-        """TODO: HOW MANY OUTPUTS TO SAVE"""
-        """ S """
-
-        """ TODO: PUT INITIAL ZERO THROUGH THE SYSTEM TO DEFINE H AND C"""
-
- """TODO: DECIDE WHETHER THE ABOVE SHOULD BE ARRAY OR NOT"""
-
-         """TODO: INITIALISE THESE WITH VECTORS."""
-
-
-
-        """TODO: SORT OUT H SIZING. """
-
-                """TODO: CHECK IF THIS NEEDS TO BE DETATCHED OR NOT"""
-
-#         for i in range(self.layers):
-#             """CHANGED: NOW HAS COPY IN COPY OUT BASED ON [[0,0][H,C]] FORMAT"""
-#             if copy_in == False: # i.e if no copying in occurs then proceed as normal
-#                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
-#                 h_shape[1] = self.dummy_list[i+1] # check indexing.
-# #                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
-#                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
-# #             elif copy_in[i] == [0,0]:
-#             elif isinstance(copy_in[i], list):
-
-#                 assert (len(copy_in) == self.layers), "Length disparity between layers, copy in format"
-
-#                 # if no copying in in alternate format
-#                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
-#                 h_shape[1] = self.dummy_list[i+1] # check indexing.
-#                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
-
-#             else: # copy in the provided vectors
-#                 assert (len(copy_in) == self.layers), "Length disparity between layers, copy in format"
-
-#                 """TODO: DECIDE WHETHER TO CHANGE THIS TO AN ASSERT BASED OFF TYPE OF TENSOR."""
-#                 empty_start_vectors.append(copy_in[i])
-
-
-            """AS WE PUT IN ZEROS EACH TIME THIS MAKES OUR LSTM STATELESS"""
-            # initialise with zero or noisy vectors
-            # at start of each layer put noisy vector in
-            # look at tricks paper to find more effective ideas of how to put this in
-            # do we have to initialise with 0 tensors after we go to the second layer
-            # or does the h carry over???
-            """TODO: REVIEW THIS CHANGE"""
-
-             """TODO: REVIEW THIS SECTION"""
-            """CHANGED: TO ALWAYS CHOOSE H AND C"""
-
-                        """TODO: DO WE HAVE TO PUT BLANK VECTORS IN AT EACH TIMESTEP?"""
-                """TODO: PUT H IN FROM PREVIOUS LAYER, BUT C SHOULD BE ZEROS AT START"""
 
 class LSTMmain(nn.Module):
     """Full ConvLSTM module
@@ -532,14 +446,7 @@ class LSTMmain(nn.Module):
                 print(x.shape)
 
         return x , internal_outputs
-"""# lstm enc dec onestep"""
 
-# test2 = LSTMmain(shape, 1, 3, 5, [1], test_input = [1,2], debug = False).double()
-
-
-        """TODO: MAKE KERNEL SIZE A LIST SO CAN SPECIFY AT EACH JUNCTURE."""
-        """STRUCTURE IS AN ARRAY - CANNOT USE [] + [] LIST CONCATENATION - WAS ADDING ONE ONTO THE ARRAY THING."""
-        """TODO: ASSERT THAT DATATYPE IS INT."""
 
 class LSTMencdec_onestep(nn.Module):
     """Class to allow easy construction of ConvLSTM Encoder-Decoder models
@@ -713,8 +620,6 @@ class LSTMencdec_onestep(nn.Module):
             print("FINISHING ONE PASS")
         return res
 
-"""# dataset"""
-        """TODO: CHECK IF THIS RETURNS DOUBLE"""
 
 
 class HDF5Dataset(Dataset):
@@ -854,7 +759,7 @@ def initialise_dataset_HDF5_full(dataset, valid_frac = 0.1, dataset_length = 900
     else:
         print("not a valid fraction for validation") # turn this into an assert.
 
-"""# shuffling functions"""
+
 
 def validation_split(data, n_splits = 1, valid_fraction = 0.1, random_state = 0):
     """Produces a stratified shuffle split of given dataset
@@ -881,38 +786,6 @@ def unsqueeze_data(data):
     truth = truth.double()
 
     return predictor, truth
-    # the data should now be unsqueezed.
-
-#def initialise_dataset(data):
-#    # unsqueeze data, adding a channel dimension for later convolution.
-#    # this also gets rid of the annoying tuple format
-#    predictor, truth = unsqueeze_data(data)
-#
-#    train_index, valid_index = validation_split(data)
-#
-#    train_predictor = predictor[train_index]
-#    valid_predictor = predictor[valid_index]
-#
-#    train_truth = truth[train_index]
-#    valid_truth = truth[valid_index]
-#
-#    train_dataset = SequenceDataset(train_predictor, train_truth)
-#    valid_dataset = SequenceDataset(valid_predictor, valid_truth)
-#
-#    return train_dataset, valid_dataset
-
-"""#TRAINING FUNCTIONS"""
-# talk about this later.
-
-#         loss = comb_loss_func(prediction, y)
-#         print(prediction.shape)
-#         print(y[:,:1,:,:,:].shape)
-        """commented out """
-#         loss = - loss_func(prediction[:,0,:,:,:], y[:,0,:,:,:])
-
-# ssim_out = -ssim_loss(train[0][0][-1:],  x[0])
-# ssim_value = - ssim_out.data
-
 
 
 
@@ -924,11 +797,7 @@ def comb_loss_func(pred, y):
     ssim_loss = -ssim(pred[:,0,:,:,:], y[:,0,:,:,:])
     return mse_loss + ssim_loss
 
-        """THIS DOESNT DEAL WITH SEQUENCE LENGTH VARIANCE OF PREDICTION OR Y"""
 
-        """ACTUAL FUNCTION THATS BEEN COMMENTED OUT."""
-#         loss = loss_func(prediction, y[:,:1,:,:,:])
-        """CHANGED BECAUSE """
 def train_enc_dec(model, optimizer, dataloader, loss_func = nn.MSELoss(), verbose = False):
     """Training function for encoder decoder models.
 
@@ -1024,12 +893,6 @@ def validate(model, dataloader, loss_func = nn.MSELoss(), verbose = False):
 
     return tot_loss / i # returns total loss averaged across the dataset.
 
-
-
-
-
-
-
 def train_main(model, params, train, valid, epochs = 30, batch_size = 1):
     """Main training functions for the LSTMencdec
 
@@ -1071,7 +934,6 @@ def train_main(model, params, train, valid, epochs = 30, batch_size = 1):
 
     return model, optimizer
 
-"""# hdf5 with avgs"""
 
 class HDF5Dataset_with_avgs(Dataset):
     """dataset wrapper for hdf5 dataset to allow for lazy loading of data. This
@@ -1264,12 +1126,6 @@ def wrapper_full(name, optimizer,  structure, loss_func, avg, std, application_b
         f.close()
     return True
 
-#     f.close()
-
-
-#structure = np.array([[12,24,0,0,0],[0,24,12,6,5]])
-#
-#test_model = LSTMencdec_onestep(structure, 1, kernel_size = 3).to(device)
 
 
 def test_image_save(model, train_loader, name, sample = 7):
@@ -1365,7 +1221,6 @@ def f1(model, train_loader, avg = 'macro'):
 
 
 
-#     print(x[sample][0][0])
 
 def metrics(model, train_loader, name = 'default', verbose = True, save = True):
     """Calculate TN, FN, TP, FP, precision, recall and f1 score.
@@ -1644,20 +1499,4 @@ def batch_loss_histogram(model, train_loader, loss_func):
 
 
     return loss
-#
-#d = np.load("weights_bce.npy")
-#weights = torch.tensor(d)
-#weights = weights // 2
-#weights = weights.to(device)
-#b = nn.BCEWithLogitsLoss(pos_weight=weights)
-#
-#
-#
-#avg = np.load("fixed_25_avg.npy")
-#std = np.load("fixed_25_std.npy")
-## changed below
-#apbln = [0,1,0,0,1] # think this is correct
-#
-#wrapper_full("valid_test", 10, structure, b, avg, std, apbln, lr = 0.001, epochs = 2000, batch_size = 200)
-
 

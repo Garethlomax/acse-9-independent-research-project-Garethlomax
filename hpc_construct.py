@@ -16,11 +16,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib.cm as cm
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
+#import cartopy.crs as ccrs
+#import cartopy.feature as cfeature
 import h5py
 import random
-
+from sklearn.neighbors import LocalOutlierFactor
 """# FUNCTIONS"""
 
 def date_to_int_list(date):
@@ -491,12 +491,21 @@ def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, clust
     # locate events occuring in the first channel
     y, x = np.where(image[sequence_step][0] >= 1)
 
-    """INCLUDE CLUSTERING IN HERE?????"""
+
     if cluster:
+
+        X = np.hstack((x.reshape((-1,1)), y.reshape((-1,1))))
+
         clf = LocalOutlierFactor(n_neighbors=5, contamination= 0.05)
-        pred = clf.fit_predict(X)
+        y_pred = clf.fit_predict(X)
+        bools = (y_pred == 1)
+        non_outs = X[bools]
+        x = non_outs[:,0]
+        y = non_outs[:,1]
+
+
         # correct this but answer is this shape
-        np.hstack((a.reshape((-1,1)), b.reshape((-1,1))))
+
 
     if debug:
         print(x.shape)
@@ -772,55 +781,6 @@ def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
     lat  = lat[0][0]
     long = long[0][0]
     return long, lat
-
-def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_colour = 'black'):
-    """Plots PlateCarree map projection of given PRIO grid global representation
-
-    Plots heatmap of given global array of PRIO grid encoded predictors. Plotted
-    on PlateCaree projection using cartopy.
-
-    Parameters
-    ----------
-    test_array: array
-        input array representation of conflict parameters to display. Input must
-        be of dimensions (360 x 720). Input easily constructed using
-        construct_layer function.
-    vmin, vmax: float, optional
-        Control the cutoff of values represented in the heatmap. Passed as a parameter
-        to maplotlib.pyplot.pcolormesh
-    colour: str, optional.
-        Optional specification of the plotting colourscheme. may be any matplotlib
-        supported colorscheme.
-    border_color: str, optional
-        Specifies the colour of the country outlines in the plot. may be 'black',
-        'white', or 'grey'.
-    """
-
-    north = 37.32
-    south = -34.5115
-    west = -17.3113
-    east = 51.2752
-    plt.figure()
-    ax = plt.axes(projection=ccrs.PlateCarree())
-
-
-    y = np.arange(-90,90,0.5)
-    x = np.arange(-180,180,0.5)
-    xx, yy = np.meshgrid(x,y)
-
-
-
-    ax.coastlines(color = border_colour)
-    ax.add_feature(cfeature.BORDERS, edgecolor='black')
-
-    #plot box around africa
-    loc_b = [north, north, south, south, north]
-    loc_a = [west, east, east, west, west]
-    ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
-
-    cmap = cm.get_cmap(name = colour)
-    ax.pcolormesh(xx, yy, test_array,vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree(), cmap = cmap)
-    plt.show()
 
 
 def round(i):

@@ -135,7 +135,16 @@ def test_find_avg_lazy_load():
     assert avg[0] == np.average(f['predictor'])
     assert std[0] == np.std(f['predictor'])
 
-
+test_date_column()
+test_date_to_int_list()
+test_monotonic_date()
+test_construct_layer()
+test_binary_event_column()
+test_nan_to_one()
+test_random_pixel_bounds()
+test_random_grid_selection()
+test_full_dataset_h5py()
+test_find_avg_lazy_load()
 
 
 

@@ -532,15 +532,187 @@ class LSTMmain_t(nn.Module):
 
 #         x = torch.zeros(x.shape)
 #         x.requires_grad = True
-
-        if len(internal_outputs) == 0:
-            internal_outputs = [torch.zeros(h_shape, dtype = torch.double, requires_grad = True) for i in range(3)]
-        internal_outputs = torch.stack(internal_outputs,0) # CHANGED
+#
+#        if len(internal_outputs) == 0:
+#            internal_outputs = [torch.zeros(h_shape, dtype = torch.double, requires_grad = True) for i in range(3)]
+#
+#        internal_outputs = torch.stack(internal_outputs,0) # CHANGED
         return x , internal_outputs # return new h in tensor form. do we need to cudify this stuff
 
     def initialise(self):
         """put through zeros to start everything"""
 
+class LSTMencdec_onestep_t(nn.Module):
+    """Class to allow easy construction of ConvLSTM Encoder-Decoder models
+
+    Constructs ConvLSTM encoder - decoder models using LSTMmain. Takes structure
+    argument to specify architecture of initialised model. The structure is a
+    2D numpy array. The top row of the array defines the encoder, the bottom
+    row defines the encoder. Non zero values in the encoder and decoder rows
+    define the number of layers and the hidden channel number for each layer
+    of the encoder decoder model. 0 values after a positive in an encoder row
+    denote the end of the encoder. 0 values precede the hidden channel
+    specification for the decoder. A column overlap between two non zero values
+    means that the hidden states are copied out of the corresponding encoder layer
+    and into the decoder model. An encoder that has hidden channels of size
+    6, and 12, and decoder that reduces the prediction to 6 channels symmetrically
+    would be input as: structure = [[6,12,0,],
+                                    [0,12,6]]
+
+    Attributes
+    ----------
+
+    Structure: int, list
+
+
+    """
+
+    def __init__(self, structure, input_channels, kernel_size = 5, debug = False):
+        """Constructor for LSTMencdec
+
+        Constructs two intances of LSTMmain, one encoder and one decoder. passes
+        structure argument to input_test function to produce the analytics of
+        the functions.
+
+        Parameters
+        ----------
+        structure: array of ints
+            2d array of ints used to specify structure of encoder decoder. The
+            top row of the array defines the encoder, the second row of the array
+            defines the decoder. Non zero digits signify then number of channels
+            in the hidden state for each layer. Zero digits specify the end of
+            the encoder, and are used before the initial digits of the decoder
+            as a placeholder. Vertical overlap of non zero digits specifies
+            that the hidden state of the encoder layer will be copied as the initial
+            state into the corresponding decoder layer. An example outputting
+            an image sequence of 5 hidden layers is shown.
+            structure = [[6,12,24,0,0,0],
+                         [0,0,24,12,8,5]].
+        input_channels: int
+            The number of channels of each image in the image input sequence to
+            the encoder decoder.
+        kernel_size: int, optional
+            The size of the convolution kernel to be used in the encoder and
+            decoder layers.
+        debug: bool, optional
+            Switch to turn off debugging print statements.
+        """
+
+
+        super(LSTMencdec_onestep_t, self).__init__()
+        assert len(structure.shape) == 2, "structure should be a 2d numpy array with two rows"
+
+        self.debug = debug
+
+        # shape of input
+        shape = [1,10,3,16,16]
+
+        self.structure = structure
+        self.input_channels = input_channels
+        self.kernel_size = kernel_size
+
+        # extract arguments for encoder and decoder constructors from structure
+        self.enc_shape, self.dec_shape, self.enc_copy_out, self.dec_copy_in = self.input_test()
+
+        if self.debug:
+            print("enc_shape, dec_shape, enc_copy_out, dec_copy_in:")
+            print(self.enc_shape)
+            print(self.dec_shape)
+            print(self.enc_copy_out)
+            print(self.dec_copy_in)
+
+
+
+
+        # why does this have +1 at third input and decoder hasnt??????
+
+        #initialise encoder and decoder structures
+        self.encoder = LSTMmain_t(shape, self.input_channels, len(self.enc_shape)+1, self.kernel_size, layer_output = self.enc_copy_out, test_input = self.enc_shape, copy_bool = [False for k in range(len(self.enc_shape))]  )
+
+        # now one step in sequence
+        shape = [1,1,1,64,64]
+
+        self.decoder = LSTMmain_t(shape, self.enc_shape[-1], len(self.dec_shape), self.kernel_size, layer_output = 1, test_input = self.dec_shape, copy_bool = self.dec_copy_in,  second_debug = False)
+
+
+
+        # initialise encoder and decoder network
+
+    def input_test(self):
+        """Checks and extracts information from the given structure argument
+
+        Returns
+        -------
+        enc_shape: list of int
+            shape argument specifying hidden layers of the encoder to be passed
+            to LSTMmain constructor.
+        dec_shape: list of int
+            enc_shape: list of int
+            shape argument specifying hidden layers of the decoder to be passed
+            to LSTMmain constructor.
+        enc_overlap: list of bool
+            List of boolean values denoting whether each layer of the encoder
+            overlaps with a decoder layer in the structure input and thus should
+            copy out. To be passed to the LSTMmain 'copy_bool' argument
+        dec_overlap: list of bool
+            List of boolean values denoting whether each layer of the decoder
+            overlaps with an encoder layer in the input and thus should
+            copy in a hidden layer. To be passed to the LSTMmain 'copy_bool'
+            argument.
+        """
+        copy_grid = []
+        # finds dimensions of the encoder
+        enc_layer = self.structure[0]
+        enc_shape = enc_layer[enc_layer!=0]
+        dec_layer = self.structure[1]
+        dec_shape = dec_layer[dec_layer!=0]
+
+        # find vertical overlaps between non zero elements
+        for i in range(len(enc_layer)):
+            if self.debug:
+                print(enc_layer[i], dec_layer[i])
+            if (enc_layer[i] != 0) and (dec_layer[i] != 0):
+                copy_grid.append(True)
+            else:
+                copy_grid.append(False)
+
+
+        enc_overlap = copy_grid[:len(enc_layer)-1]
+
+        num_dec_zeros = len(dec_layer[dec_layer==0])
+
+        dec_overlap = copy_grid[num_dec_zeros:]
+
+        return enc_shape, dec_shape, enc_overlap, dec_overlap
+
+    def forward(self, x):
+        """Forward method of LSTMencdec
+
+        Takes input image sequence produces a prediction of the next image in
+        the sequence frame using a conditional LSTM encoder decoder structure
+
+        Parameters
+        ----------
+        x: tensor of doubles
+            Pytorch tensor of input image sequences. should be of size (minibatch
+            size, sequence length, channels, height, width)
+
+        Returns
+        -------
+        tensor:
+            Tensor image prediction of size (minibatch size, sequence length,
+            channels, height, width)
+        """
+        # pass inputs to encoder
+        x, out_states = self.encoder(x, copy_in = False, copy_out = self.enc_copy_out)
+
+        # select last input of encoder for conditional encoder decoder model.
+        x = x[:,-1:,:,:,:]
+
+        res, _ = self.decoder(x, copy_in = out_states, copy_out = [False, False, False,False, False])
+        if self.debug:
+            print("FINISHING ONE PASS")
+        return res
 
 
 
@@ -556,9 +728,6 @@ def test_LSTMmain_initial():
     # internal outputs - list. Can we switch to tensors.
     res = torch.autograd.gradcheck(test2, (test_input_tensor,), eps=1e-4, raise_exception=True)
 
-
-
-
 def test_LSTMunit_autograd():
     """Tests end to end differentiability of LSTMunit_t.
     """
@@ -569,9 +738,17 @@ def test_LSTMunit_autograd():
     testunit = LSTMunit_t(1,2,3).double()
     torch.autograd.gradcheck(testunit, (x,h,c), eps=1e-4, raise_exception=True)
 
-test_LSTMmain_initial()
+def test_LSTMencdec():
+    """Tests end to end differentiability of LSTMencdec
+    """
+    structure = np.array([[2,4,0],[0,4,2]])
+    encdec = LSTMencdec_onestep_t(structure, 1, 5)
+    shape = [1,10,1,16,16]
+    x = torch.zeros(shape, dtype = torch.double, requires_grad = True)
+    torch.autograd.gradcheck(encdec, (x,), eps=1e-4, raise_exception=True)
 
-
+#test_LSTMmain_initial()
+test_LSTMencdec()
 
 
 

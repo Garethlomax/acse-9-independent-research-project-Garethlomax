@@ -17,10 +17,10 @@ import cartopy.feature as cfeature
 from sklearn.cluster import AgglomerativeClustering, MeanShift, AffinityPropagation
 from sklearn.neighbors import LocalOutlierFactor
 
+from hpc_construct import *
 
 
-
-#data = pd.read_csv("data/ged191.csv")
+data = pd.read_csv("data/ged191.csv")
 
 north = 37.32
 south = -34.5115
@@ -78,6 +78,18 @@ fig, ax = plt.subplots(1, 1, figsize=(64, 8))
 
 ax.scatter(X[:,0], X[:,1], c=list(y_pred))
 
+
+
+for i in range(len(x)):
+    X.append([x[i], y[i]])
+
+X = np.array(X)
+clf = LocalOutlierFactor(n_neighbors=5, contamination= 0.05)
+y_pred = clf.fit_predict(X)
+bools = (y_pred == 1)
+non_outs = X[vals]
+x = non_outs[:,0]
+y = non_outs[:,1]
 
 #ax.plot(x, y, '.',c = clustering.labels_,transform = ccrs.PlateCarree() )
 
