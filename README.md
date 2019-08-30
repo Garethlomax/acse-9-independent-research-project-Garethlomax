@@ -15,7 +15,9 @@ Conflict_LSTM allows:
 - Analysis and Visualisation of produced results.
 
 ./Figures contains generated figures for use in report and presentation
+
 ./saved runs contains saved state dict of trained models 
+
 ./training logs contains training logs of trained models
 
 
