@@ -235,7 +235,9 @@ class LSTMmain(nn.Module):
 
         # initialise the different conv cells.
         # allows test input to be an array
-        self.dummy_list = [input_channel_no] + list(self.hidden_channel_structure)
+        self.dummy_list = [input_channel_no]
+        self.dummy_list.extend(list(self.hidden_channel_structure))
+
 
         # initialises units for each layer in LSTM
         self.unit_list = nn.ModuleList([(LSTMunit(self.dummy_list[i], self.dummy_list[i+1], kernel_size).double()).cuda() for i in range(len(self.hidden_channel_structure))])
