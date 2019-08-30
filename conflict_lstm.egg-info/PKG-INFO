@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: conflict-lstm
+Version: 0.0.1
+Summary: Package for ConvLSTM analysis of conflict data
+Home-page: https://github.com/msc-acse/acse-9-independent-research-project-Garethlomax
+Author: Gareth Lomax
+Author-email: gcl15@ic.ac.uk
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent

@@ -1,0 +1,11 @@
+README.md
+setup.py
+conflict_lstm/__init__.py
+conflict_lstm/hpc_construct.py
+conflict_lstm/latest_run.py
+conflict_lstm/map_module.py
+conflict_lstm.egg-info/PKG-INFO
+conflict_lstm.egg-info/SOURCES.txt
+conflict_lstm.egg-info/dependency_links.txt
+conflict_lstm.egg-info/requires.txt
+conflict_lstm.egg-info/top_level.txt

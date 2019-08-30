@@ -1,0 +1,9 @@
+#PBS -lwalltime=8:30:00
+#PBS -lselect=1:ncpus=16:mem=96gb:ngpus=4
+
+cp $HOME/masters_project/data/*.hdf5 $TMPDIR
+cp $HOME/masters_project/data/*.npy $TMPDIR
+module load anaconda3/personal
+timeout 8h python $HOME/masters_project/data/bce_w_4.py
+mkdir $WORK/$PBS_JOBID
+cp * $WORK/$PBS_JOBID

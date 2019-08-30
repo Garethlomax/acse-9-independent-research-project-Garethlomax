@@ -1,0 +1,113 @@
+447485 - bce loss 
+447488 - bce_reduction
+447489 - lr_0001
+447490 - kern_5 
+
+
+
+449649 - scaled bce loss 
+
+TODO:
+# change in all - train_index  = list
+IN initialise_dataset_HDF5_full
+
+THIS IS CURRENTLY CORRECT IN MODEL TESTING.IPYNB BUT MAY NOT BE IN OTHERS.
+
+issues todo:
+
+WHY IS TRAINING SET ANSWER CURRENTLY USING NORMALISED VALUES?????
+- dodgy if statement in h5dpy with avgs - commented out to test on bce
+- may be cause of bce_loss not working as basically eveything is predicted to be 0
+- when should be 0's and 1's 
+- re run two jobs to check
+
+
+
+jobs todo:
+
+Add single network job
+
+refactor to python file of functions
+
+run new prediction jobs - consider kernel size change effect
+
+run reversed order input - torch.flip
+
+if new bceloss doesnt work - flip and look at increasing kernel size.
+
+- compare kernel sizes
+
+
+NOTES ON OVERNIGHT RUN
+449842 - bce weights long
+449843 - bce def opt
+449844 - bce_lr_0001 
+449845 - bce_kern5
+
+lr - 0001, amsgrad = True best performance - was still improving when finished, 
+validation stayed same - 0.87, 0.94
+bce_kern5 - 89 train but 0.92 validation.
+
+
+need to balance precision and recall
+
+precision - how correct are the things you identify as true - i.e out of 
+the predictions you put as true, how many of these are actually true
+
+recall - ratio of positive cases correctly identified and number of cases overall
+
+over emphasizing recall.
+
+
+TODO:
+load up functions for pytorch build.
+
+try variable cuttoff with relu difference / if below threshold = 0, where 
+threshold is a traineable parameter with mseloss.
+
+ 
+
+IMPORTANT 
+BCE_REVERSED HAS CHANGED HDF5 WITH AVGS FUNCTION - ALSO CHANGED THE LIST THING AGAIN 
+
+basic 4 - 0.53, 0.55
+
+Code - 00001 lr was better, as was 4 
+
+TODO: 
+PUT EVERYTHING IN PACKAGE, FUNCTIONALISE, ECT.
+
+TESTS FOR CONV LSTM
+
+
+MAY BE ISSUE IN LSTMencdec_onestep - shape defined internally - always [1,10,3,16,16] - issue?
+
+
+TRY MINIMISING TO 1 FINAL LAYER?
+
+ISSUE : MAJOR FUCKING ISSUE : 
+    truth = image[sequence_step][0,i_lower:i_upper,j_lower:j_upper]
+            # check these dimensions
+            """FIXED BELOW """
+            predictors = image[i-10:i, :,i_lower:i_upper,j_lower:j_upper]
+
+            truth_list.append(truth)
+            predictor_list.append(predictors)
+SHOULD BE SEQUENCE STEP NOT I. 
+
+
+datasets now called - fixed_25_avg, fixed_25_std,
+test_fixed_25
+tes
+
+
+APPLES TO APPLES PAPER - TRUE NEGATIVE TRUE POSITIVE.
+
+Object orientated.
+
+
+
+cuDNN error: CUDNN_STATUS_MAPPING_ERROR - pytorch may be out of sinc with version of cuda
+
+micro and macro f1 loss.
+
