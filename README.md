@@ -613,4 +613,257 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     bool:
         True
     """
+    ### construct_layer
+    """Constructs single global parameter map of PRIO encoded variables
+
+    Takes input dataframe of either PRIO or UCDP data. Produces 360 x 720 array
+    prio grid single layer representation of conflict predictor specified by
+    key input.
+
+    Parameters
+    ----------
+    dataframe: Pandas Dataframe
+        Dataframe of either UCDP or PRIO data, with column index of prio grid cells
+        for each entry. Data is found at PRIO or UCDP websites XXXX.
+    key: str
+        Dataframe key for chosen predictor to be extracted and spatially
+        represented in the output array.
+    prio_key: str
+        Dataframe key for the column noting the PRIO grid cell location of each
+        entry. For UCDP csvs prio_key = 'priogrid_gid', for PRIO csvs prio_key
+        = 'gid'
+    debug: bool
+        controls debugging print statements
+
+    Returns
+    -------
+    array:
+        array of height 360, width 720 containing the selected parameter arranged
+        spatially into the corresponding PRIO grid cell.
+    """
+    ### construct_combined_sequence
+    """Constructs Series of global representations of PRIO and UCDP conflict predictors
+
+    Constructs Series of global representations of PRIO and UCDP conflict
+    predictors in an image array format. Image representations of the selected
+    conflict predictors at each month between start and stop dates are predicted
+    into a global prio grid represenation of size 360 x 720. Each selected predictor
+    is allocated an image channel. The output is returned as size: (months,
+    predictor number, 360, 720). The output is of size 360 x 720 due to each
+    prio grid cell being of dimensions 0.5 degrees lattitude and longitude.
+
+    Parameters
+    ----------
+    dataframe_prio: pandas DataFrame
+        Dataframe constructecd from PRIO grid data CSV in the format supplied
+        by the PRIO grid Project.
+    dataframe_ucdp: pandas DataFrame
+        Dataframe constructecd from UCDP grid data CSV in the format supplied
+        by the UCDP grid Project.
+    key_list_prio: str, list
+        List of Dataframe keys for desired predictors to extract from the PRIO
+        Dataframe to represent spatially per prio grid cell.
+    key_list_ucdp: str, list
+        List of Dataframe keys for desired predictors to extract from the UCDP
+        Dataframe to represent spatially per prio grid cell.
+    start: int, list
+        Representation of data extraction start date. in [y,m,d] format
+    stop: int, list
+        Representation of data extraction finish date. in [y,m,d] format
+
+    Returns
+    -------
+        array:
+            returns array of size (months, channels, height, width). The array
+            is a sequence of global images of Conflict predictors for each month
+            between specified start and end dates. Each channel represents a
+            specified conflict predictor. Each pixel corresponds to one PRIO grid
+            cell.
+    """
+    ### construct_channels
+    """Constructs global parameter layer of multiple specified conflict predictors
+
+    Constructs global parameter layer of multiple specified conflict predictors
+    for use in Construct_Combined_sequence. Takes dataframe of either PRIO or
+    UCDP conflict data for a single month and selects predictors for channels
+    based on the key_list argument.
+
+    Parameters
+    ----------
+    dataframe: pandas Dataframe
+        Dataframe of conflict data, constructed from CSV datasets from PRIO or
+        UCDP. Must have a column of PRIO grid cell values for each Predictor
+        value.
+    key_list: str, list
+        List of Dataframe keys for which parameters are extracted into image
+        layers.
+    prio_key: str
+        Dataframe key for the PRIO grid column. For PRIO converted datasets the
+        key is 'gid'. For UCDP converted datasets the key is 'priogrid_gid'
+
+    Returns
+    -------
+    array:
+        image representation of global values of conflict data. Returns image of
+        dimension (len(key_list, 360, 720). Each pixel represents the predictor
+        value at a particular grid cell.
+    """
+    ### random_pixel_bounds
+    """Returns range of indices to extract a randomly placed square of size
+    chuksize in which the specified entry of the overall array is captured
+
+    Function returns 4 parameters: i_lower, i_upper, j_lower, j_upper which define
+    the bounds of the square region to be extracted. structured so the extracted
+    region may be defined as extracted = target[i_lower:i_upper, j_lower:j_upper]
+
+    Parameters
+    ----------
+    i: int
+        i index of the array entry to be captured
+    j: int
+        j index of the array entry to be captured
+    chunk_size: int
+        side length of the square to be cut out of the array.
+
+    Returns
+    -------
+    i_lower: int
+        Lower i index for the random square placed over the targetted event.
+    i_upper: int
+        Upper i index for the random square placed over the targetted event.
+    j_lower: int
+        Lower j index for the random square placed over the targetted event.
+    j_upper: int
+        Upper j index for the random square placed over the targetted event.
+    """
+    ### random_grid_selection
+    """Extracts conflict image sequence samples for a given monnth.
+
+    Produces conflict image sequence samples for each month from an input global
+    image sequnce produced using construct_combined_sequence. Takes input image
+    sequence of global representations of PRIO grid conflict predictors and extracts
+    image sequences of events. Events may be clustered to remove outliers via
+    Kmeans clustering. A square of side length chunksize surrounding each non zero
+    grid cell in the first channel of each month's prio image is randomly placed
+    and the image for that month is extracted as the truth value for prediction.
+    The preceding 10 months events are extracted in the same manner as the input.
+    If the extracted preceding sequence contains more than min_events non zero
+    values in the first image channel (total) the preceding image sequence and
+    ground truth prediction are kept.
+
+    Parameters
+    ----------
+    image: array
+        Input array of sequences of global representations of the PRIO conflict
+        predictors. This should be produced by the construct_combined_sequence
+        function. The array should be of size (months, channels, 360, 720)
+    sequence_step: int
+        The chosen month from which the prediction ground truth is extracted,
+        and which precedes the 10 predicting months, from which the image
+        prediction sequence will be extracted.
+    chunk_size: int
+        side length of the square to be cut out of the array.
+    draws: int
+        The number of times each event is to be randomly sampled. i.e how many
+        data samples are extracted per viable event
+    cluster: bool
+        Controls whether events will be subject to outlier detection before
+        being sampled. Enabling removes small, isolated events.
+    min_events: int
+        The total number of conflict events required in the prediction sequence
+        for a datasample to be accepted. 25 works as an optimum value for filtering
+        out small events with little spatial dependancy
+    debug: bool
+        controls debugging print statements.
+
+    Returns
+    -------
+    tuple:
+        Returns tuple of two numpy arrays. The first contains an array of sampled
+        prediction sequences, the second contains an array of ground truth next
+        steps in the conflict sequence. The prediction sequence array is of dimensions
+        (number of samples, sequence steps, channels, chunksize, chunksize)
+        The array of ground truths is of size (number of samples, chunksize,
+        chunksize)
+    """
+    ### full_dataset_h5py
+    """Produces h5py Dataset of conflict image sequences, and the prediction ground truth
+
+    Uses random_grid_selection to extract conflict image prediction sequences
+    and the next step in the sequence (i.e the image to be predicted). The produced
+    image sequences are stored in a hdf5 dataset to allow lazy loading of image
+    sequences. The keys 'predictor' and 'truth' are used to store the predictors
+    and prediction ground truths. The data selected is stored as meta data attributes
+    on the hdf5 dataset.
+
+    Parameters
+    ----------
+    image: array
+        Input array of sequences of global representations of the PRIO conflict
+        predictors. This should be produced by the construct_combined_sequence
+        function. The array should be of size (months, channels, 360, 720)
+    filename: str
+        name of hdf5 file to be saved.
+    key_list_prio: str, list
+        List of PRIO data keys selected
+    key_list_ucdp: str, list
+        List of UCDP data keys selected
+    chunk_size: int
+        dimensions of images in image sequence to be extracted.
+    draws: int
+        Number of times an event is to be randomly sampled
+    min_events: int
+        Threshold of conflict events in image sequence that the image sequence
+        must meet to be added to the dataset.
+    debug: bool
+        Switch for turning on debugging print options
+
+    """
+    ### find_avg_lazy_load
+    """Extracts average and std from produced hdf5 datasets
+
+    Uses hdf5 lazy loading to subdivide produced image sequence datasets and extract
+    an overall average, when the produced datasets are too large to naively average
+    and find the standard deviation for.
+
+    Parameters
+    ----------
+    data: hdf5 file
+        Takes loaded hdf5 file. File should have two datasets, accessible via
+        the keys: 'predictor' and 'truth'. Full_dataset_h5py produces suitable
+        files.
+    div: int
+        The number of datasamples to average over at a time.
+
+    Returns
+    -------
+    avg: list of int
+        List of averages for each channel in the input image sequence dataset
+    std: List of int
+        List of standard deviations for each channel in the inout image sequence
+        dataset.
+    """
+    ### construct_dataset
+    """Produces image sequence dataset from input of conflict predictor dataframes
+
+    Short pipeline function for construct_combined_sequence, and full_dataset_h5py.
+
+    Parameters
+    ----------
+    filename: str
+        The filename underwhich the produced hdf5 image sequence dataset is saved
+    data_prio: pandas DataFrame
+        Dataframe of PRIO grid v2 data
+    data_ucdp: pandas Dataframe
+        Dataframe of UCDP conflict data
+    key_list_prio: list of str
+        List of strings passed to dataframe to select chosen conflict predictors
+     key_list_ucdp: list of str
+        List of strings passed to dataframe to select chosen conflict predictors
+    start: list of int
+        start date of data to be selected in int [y,m,d] format
+    stop: str
+        stop date of data to be selected in "yyyy-mm-dd" format.
+    """
+    
 
