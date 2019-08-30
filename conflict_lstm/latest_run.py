@@ -83,7 +83,7 @@ class LSTMunit(nn.Module):
 
 
     """
-    def __init__(self, input_channel_no, hidden_channels_no, kernel_size, stride = 1):
+    def __init__(self, input_channel_no, hidden_channels_no, kernel_size, stride = 1, input_dim = 16):
         """Constructor method for LSTM
 
         Parameters
@@ -119,6 +119,7 @@ class LSTMunit(nn.Module):
         self.conv_dict = nn.ModuleDict(zip(self.filter_name_list, self.conv_list))
 
         # of dimensions seq length, hidden layers, height, width
+        # statically declaring allows back compatability with previous runs
         shape = [1, self.output_channels, 16, 16]
 
         # Wco, Wcf, Wci defined as tensors as are multiplicative, not convolutions
@@ -235,16 +236,16 @@ class LSTMmain(nn.Module):
 
         # initialise the different conv cells.
         # allows test input to be an array
-        self.dummy_list = [input_channel_no]
-        self.dummy_list.extend(list(self.hidden_channel_structure))
+        self.full_channel_list = [input_channel_no]
+        self.full_channel_list.extend(list(self.hidden_channel_structure))
 
 
         # initialises units for each layer in LSTM
-        self.unit_list = nn.ModuleList([(LSTMunit(self.dummy_list[i], self.dummy_list[i+1], kernel_size).double()).cuda() for i in range(len(self.hidden_channel_structure))])
+        self.unit_list = nn.ModuleList([(LSTMunit(self.full_channel_list[i], self.full_channel_list[i+1], kernel_size).double()).cuda() for i in range(len(self.hidden_channel_structure))])
 
         if self.debug:
-            print("dummy_list:")
-            print(self.dummy_list)
+            print("full_channel_list:")
+            print(self.full_channel_list)
             print("number of units:")
             print(len(self.unit_list))
 
@@ -293,9 +294,7 @@ class LSTMmain(nn.Module):
         # x is of size batch, sequence, layers, height, width
 
         # these need to be of dimensions (batchsizze, hidden_dim, heigh, width)
-        size = x.shape
 
-        batch_size = size[0]
 
         # hidden state is of shape [1, layer output channels, height, width]
         h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
@@ -321,7 +320,7 @@ class LSTMmain(nn.Module):
                 assert self.copy_bool[i] == False, "copy_bool arent bools"
 
                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second
-                h_shape[1] = self.dummy_list[i+1]
+                h_shape[1] = self.full_channel_list[i+1]
                 # append new hidden state and cell memory
                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
 
@@ -332,7 +331,6 @@ class LSTMmain(nn.Module):
                 print(i[0].shape)
             print(" \n \n \n")
 
-        total_outputs = []
 
         # pass input sequence through each layer in the deep LSTM.
         for i in range(self.layers):
