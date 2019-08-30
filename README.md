@@ -40,7 +40,7 @@ The package is designed to be use for research in the field of conflict predicti
 # Documentation
 ## Classes
 
-###LSTMunit
+### LSTMunit
 
 - Base unit for an overall convLSTM structure.
 
@@ -293,7 +293,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     validation sets. The dataet lazy loads from hdf5 datasets and applies standard
     score normalisation in the __getitem__ method.
     
-###Methods
+### Methods
 
 - __init__
 
@@ -326,7 +326,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
 
 
 ## Functions 
-###Initialise_dataset_HDF5_full
+### Initialise_dataset_HDF5_full
 
 -Returns datasets for training and validation.
 
@@ -355,7 +355,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     validation_dataset: Pytorch dataset
         Dataset containing shuffled subset of samples for validation
         
-###t rain_enc_dec
+### train_enc_dec
 
 -Training function for encoder decoder models.
 
@@ -384,7 +384,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         
         
 
-###wrapper_full
+### wrapper_full
 
 -Training wrapper for LSTM encoder decoder models.
 
@@ -427,7 +427,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     bool:
         indicates if training has been completed.
     
- ###test_image_save
+ ### test_image_save
  """Saves comparison between prediction of the given model and ground truth.
 
     Parameters
@@ -540,7 +540,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         brier score.
 
     """
-###full_metrics
+### full_metrics
 """extracts all performance metrics from one data sample.
 
     Parameters
