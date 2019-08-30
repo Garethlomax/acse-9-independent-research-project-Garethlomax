@@ -14,6 +14,11 @@ Conflict_LSTM allows:
 - Production of new image sequence datasets from PRIO and UCDP data.
 - Analysis and Visualisation of produced results.
 
+./Figures contains generated figures for use in report and presentation
+./saved runs contains saved state dict of trained models 
+./training logs contains training logs of trained models
+
+
 ### Installation
 
 Download git repository and run **`$ python setup.py install`** inside the directory.
