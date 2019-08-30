@@ -1,7 +1,9 @@
 # Conflict_LSTM
-
+__THE REPORT TO BE ASSESED IS: Masters_project(10).pdf__
 ## Summary
-__The report to be submitted is masters project (10).pdf__
+
+
+
 Current Version: 0.1.0
 
 Lightweight python package implementing easy to use Convolutional LSTMs and Convolutional LSTM encoder - decoder models for use in conflict prediction.
