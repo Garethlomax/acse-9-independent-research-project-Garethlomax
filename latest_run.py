@@ -10,24 +10,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader, Dataset
 import torchvision.transforms as transforms
-import numpy as np
+
 from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.metrics import f1_score, multilabel_confusion_matrix, roc_curve, roc_auc_score, average_precision_score
+
+import numpy as np
 import random
 
 import matplotlib.pyplot as plt
 import h5py
 
-from sklearn.metrics import f1_score, multilabel_confusion_matrix
-import matplotlib.pyplot as plt
-import h5py
-from .hpc_construct import *
+
+import pandas as pd
+from hpc_construct import *
 
 torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.enabled = True
 device = 'cuda'
 
-from sklearn.metrics import roc_curve, roc_auc_score, average_precision_score
-import pandas as pd
 
 
 class LSTMunit(nn.Module):
