@@ -10,8 +10,8 @@ Created on Sun Aug 11 21:15:03 2019
  Pytest requires the test method names to start with test.
  All other method names will be ignored even if we explicitly ask to run those methods."""
 
-import conflict_lstm.hpc_construct as cf
-import conflict_lstm.latest_run as lr
+import hpc_construct as cf
+import latest_run as lr
 import pandas as pd
 import numpy as np
 import random
