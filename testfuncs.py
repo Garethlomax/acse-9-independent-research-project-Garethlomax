@@ -36,7 +36,7 @@ def test_LSTMencdec():
     x = torch.zeros(shape, dtype = torch.double, requires_grad = True)
     torch.autograd.gradcheck(encdec, (x,), eps=1e-4, raise_exception=True)
 
-test_LSTMmain_initial()
+#test_LSTMmain_initial()
 #test_LSTMencdec()
 
 
