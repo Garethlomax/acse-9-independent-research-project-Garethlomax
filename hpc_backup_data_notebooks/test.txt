@@ -1,0 +1,64 @@
+  File: ‘dataset_construction.ipynb’
+  Size: 149991    	Blocks: 320        IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668553  Links: 1
+Access: (0640/-rw-r-----)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.725892000 +0000
+Modify: 2019-11-13 10:53:02.742353000 +0000
+Change: 2019-11-13 10:53:02.742052449 +0000
+ Birth: -
+  File: ‘dataset_construction_variant_2.ipynb’
+  Size: 202138    	Blocks: 448        IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668566  Links: 1
+Access: (0644/-rw-r--r--)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.743838000 +0000
+Modify: 2019-11-13 10:53:02.756682000 +0000
+Change: 2019-11-13 10:53:02.756496922 +0000
+ Birth: -
+  File: ‘dataset_construction_variant_3.ipynb’
+  Size: 201939    	Blocks: 448        IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668574  Links: 1
+Access: (0644/-rw-r--r--)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.758480000 +0000
+Modify: 2019-11-13 10:53:02.766326000 +0000
+Change: 2019-11-13 10:53:02.766150490 +0000
+ Birth: -
+  File: ‘dataset_construction_variant.ipynb’
+  Size: 132296    	Blocks: 320        IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668577  Links: 1
+Access: (0644/-rw-r--r--)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.767941000 +0000
+Modify: 2019-11-13 10:53:02.777075000 +0000
+Change: 2019-11-13 10:53:02.776951454 +0000
+ Birth: -
+  File: ‘emerg_test.ipynb’
+  Size: 11557     	Blocks: 64         IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668585  Links: 1
+Access: (0644/-rw-r--r--)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.778861000 +0000
+Modify: 2019-11-13 10:53:02.802836000 +0000
+Change: 2019-11-13 10:53:02.802721373 +0000
+ Birth: -
+  File: ‘Model_testing.ipynb’
+  Size: 319929    	Blocks: 640        IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668593  Links: 1
+Access: (0640/-rw-r-----)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.804377000 +0000
+Modify: 2019-11-13 10:53:02.824620000 +0000
+Change: 2019-11-13 10:53:02.824445037 +0000
+ Birth: -
+  File: ‘new_weights.ipynb’
+  Size: 10277     	Blocks: 64         IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668600  Links: 1
+Access: (0644/-rw-r--r--)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.826237000 +0000
+Modify: 2019-11-13 10:53:02.837636000 +0000
+Change: 2019-11-13 10:53:02.837479912 +0000
+ Birth: -
+  File: ‘Untitled.ipynb’
+  Size: 72        	Blocks: 1          IO Block: 8388608 regular file
+Device: 27h/39d	Inode: 1527668606  Links: 1
+Access: (0644/-rw-r--r--)  Uid: (815881/   gcl15)   Gid: (339188/hpc-ggorman)
+Access: 2019-11-13 10:53:02.839099000 +0000
+Modify: 2019-11-13 10:53:02.839323000 +0000
+Change: 2019-11-13 10:53:02.839269858 +0000
+ Birth: -
