@@ -1,4 +1,10 @@
 # Conflict_LSTM
+
+# CHANGES POST ASSESMENT
+- Changes to random_grid_selection and full_dataset_h5py to allow for top left corner of event to be stored for map ensembing 
+- Production of map ensembling functions 
+
+
 __THE REPORT TO BE ASSESED IS: Masters_project(10).pdf__
 ## Summary
 
