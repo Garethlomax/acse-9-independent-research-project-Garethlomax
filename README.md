@@ -1,13 +1,10 @@
 # Conflict_LSTM
-__THE REPORT TO BE ASSESED IS: Masters_project(10).pdf__
 ## Summary
-
 [![Build Status](https://travis-ci.com/msc-acse/acse-9-independent-research-project-Garethlomax.svg?branch=master)](https://travis-ci.com/msc-acse/acse-9-independent-research-project-Garethlomax)
 
+This is a repository for work relating to experimental work using Convolutional LSTM encoder-decoder networks to model diffusion of UCDP conflict events. Please note that this is a repository for experimental work and as such is quite messy. There are no current plans to share this work until a sufficient amount of time has passed to allow for 4 years of out of sample testing
 
 Current Version: 0.1.0
-
-Lightweight python package implementing easy to use Convolutional LSTMs and Convolutional LSTM encoder - decoder models for use in conflict prediction.
 
 Conflict_LSTM allows:
 
@@ -21,8 +18,12 @@ Conflict_LSTM allows:
 
 ./training logs contains training logs of trained models
 
+## Contents
+This repo contains two main aspects: 
+1. The Conv_LSTM python package for implementing Conv_LSTMs in PyTorch - found in ./conflict_lstm
+2. Scripts derived from the conflict_lstm package for training models on HPC. These are contained outside of the package due to issues with package installation on the main HPC cluster used for model training.
 
-### Installation
+## Installation
 
 Download git repository and run **`$ python setup.py install`** inside the directory.
 
@@ -30,24 +31,44 @@ Download git repository and run **`$ python setup.py install`** inside the direc
 
 The package dependancies and current requirements including versions are outlined in requirements.txt. These may be installed recursively using pip.
 
-The project is also dependant on Cartopy for use in coordinate transforms while plotting data. Cartopy should be installed using conda, due to its own dependancy on non pip availiable distributions. The plotting functionality that requires Cartopy is isolated to map_module. If users do not wish to use the plotting functionality they may import the other modules. 
+The project is also dependant on Cartopy for use in coordinate transforms while plotting data. Cartopy should be installed using conda, due to its own dependancy on non pip availiable distributions. The plotting functionality that requires Cartopy is isolated to map_module. If users do not wish to use the plotting functionality they may import the other modules. These issues are due to dependencies on GDAL, which plays well or poorly depending on your local installation. Google collab is notoriously unreliable in this regard. 
 __Note that Cartopy is not listed in the requirements.txt if downloading recursively from pip__
 
-
-
-## Functionality
+### Functionality
 Functionality is split across 3 modules: latest_run, hpc_construct, and map_module.
 
 - latest_run contains functionality to construct and train ConvLSTM encoder decoder models to be run on latest conflict prediction data.
 - hpc_construct contains functionality to construct new conflict datasets and to analyse predictions.
 -map_module contans functionality to visualise conflict data.
 
-## Usage
+### Usage
 The package is designed to be use for research in the field of conflict prediction. The functions are designed to be as lightweight and readily customiseable as possible. Example usecases are demonstrated in .ipynb notebooks in the examples folder. 
 
 - dataset_construction_example.ipynb deals with the construction of the dataset.
 - model_training_example.ipynb outlines the construction and training of a model.
 - analysis_example.ipynb demonstrates the analysis that may be performed on a now constructed model.
+
+# Getting Started
+
+## How to get it to run (training on PBS cluster. Requirements: 96GB ram, 4 GPUs) 
+1. Install requirements for your specific anaconda / virtualenv environment
+2. Copy repo into local environment of cluster.
+3. Navigate to ./HPC_runs
+4. Alter example PBS files in ./HPC_runs to your specific directory paths ect
+5. Alter example submission .py files to your requirements (see below) e.g bce_w_4.py. These are found in ./HPC_runs
+6. Submit a PBS file.
+7. Use notebooks to visualise results, debug training and calculate metrics.
+
+## Modifying training and data analysis
+All model training is controlled by the wrapper_full() function. All functionality can be called by running the wrapper function. See Example_model_training.ipynb for an example. Note that in theory this can work on a Jupyter Notebook, but for any meaningful speed you should run with multiple GPUs on a cluster.
+
+(Very) Basic examples of dataset construction and analysis can be found in:
+- Example_analytics.ipynb
+- Example_model_training.ipynb
+- Example_dataset_construction.ipynb
+
+  
+
 
 # Documentation
 ## Classes
@@ -580,7 +601,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
 
     """
 ### analytics
-    """Loads given state dict and extracts metrics.
+"""Loads given state dict and extracts metrics.
 
     Uses test_image save and full_metrics to compile metric report in csv and
     to visualise prediction, from loaded pretrained model statedict. NOTE THAT
@@ -613,8 +634,9 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     bool:
         True
     """
-    ### construct_layer
-    """Constructs single global parameter map of PRIO encoded variables
+    
+### construct_layer
+"""Constructs single global parameter map of PRIO encoded variables
 
     Takes input dataframe of either PRIO or UCDP data. Produces 360 x 720 array
     prio grid single layer representation of conflict predictor specified by
@@ -641,8 +663,8 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         array of height 360, width 720 containing the selected parameter arranged
         spatially into the corresponding PRIO grid cell.
     """
-    ### construct_combined_sequence
-    """Constructs Series of global representations of PRIO and UCDP conflict predictors
+### construct_combined_sequence
+"""Constructs Series of global representations of PRIO and UCDP conflict predictors
 
     Constructs Series of global representations of PRIO and UCDP conflict
     predictors in an image array format. Image representations of the selected
@@ -680,8 +702,8 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
             specified conflict predictor. Each pixel corresponds to one PRIO grid
             cell.
     """
-    ### construct_channels
-    """Constructs global parameter layer of multiple specified conflict predictors
+### construct_channels
+"""Constructs global parameter layer of multiple specified conflict predictors
 
     Constructs global parameter layer of multiple specified conflict predictors
     for use in Construct_Combined_sequence. Takes dataframe of either PRIO or
@@ -708,8 +730,8 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         dimension (len(key_list, 360, 720). Each pixel represents the predictor
         value at a particular grid cell.
     """
-    ### random_pixel_bounds
-    """Returns range of indices to extract a randomly placed square of size
+### random_pixel_bounds
+"""Returns range of indices to extract a randomly placed square of size
     chuksize in which the specified entry of the overall array is captured
 
     Function returns 4 parameters: i_lower, i_upper, j_lower, j_upper which define
@@ -736,8 +758,8 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     j_upper: int
         Upper j index for the random square placed over the targetted event.
     """
-    ### random_grid_selection
-    """Extracts conflict image sequence samples for a given monnth.
+### random_grid_selection
+"""Extracts conflict image sequence samples for a given monnth.
 
     Produces conflict image sequence samples for each month from an input global
     image sequnce produced using construct_combined_sequence. Takes input image
@@ -786,8 +808,8 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         The array of ground truths is of size (number of samples, chunksize,
         chunksize)
     """
-    ### full_dataset_h5py
-    """Produces h5py Dataset of conflict image sequences, and the prediction ground truth
+### full_dataset_h5py
+"""Produces h5py Dataset of conflict image sequences, and the prediction ground truth
 
     Uses random_grid_selection to extract conflict image prediction sequences
     and the next step in the sequence (i.e the image to be predicted). The produced
@@ -843,8 +865,8 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         List of standard deviations for each channel in the inout image sequence
         dataset.
     """
-    ### construct_dataset
-    """Produces image sequence dataset from input of conflict predictor dataframes
+### construct_dataset
+"""Produces image sequence dataset from input of conflict predictor dataframes
 
     Short pipeline function for construct_combined_sequence, and full_dataset_h5py.
 
