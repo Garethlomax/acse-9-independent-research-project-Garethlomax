@@ -526,7 +526,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         precison, recall, and multilabel f_1 score for the model predictions.
     """
 ### Area_under_curve_metrics
-   """Calculates the Area Under the Reciever Operator Charactersitc (AUROC)
+    Calculates the Area Under the Reciever Operator Charactersitc (AUROC)
     curve and the Area Under the Precision Recall (AUPR) curve. Uses
     average_precision_score to calculate AUPR.
 
@@ -601,7 +601,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
 
     """
 ### analytics
-"""Loads given state dict and extracts metrics.
+    """Loads given state dict and extracts metrics.
 
     Uses test_image save and full_metrics to compile metric report in csv and
     to visualise prediction, from loaded pretrained model statedict. NOTE THAT
@@ -636,7 +636,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
     """
     
 ### construct_layer
-"""Constructs single global parameter map of PRIO encoded variables
+    """Constructs single global parameter map of PRIO encoded variables
 
     Takes input dataframe of either PRIO or UCDP data. Produces 360 x 720 array
     prio grid single layer representation of conflict predictor specified by
@@ -664,7 +664,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         spatially into the corresponding PRIO grid cell.
     """
 ### construct_combined_sequence
-"""Constructs Series of global representations of PRIO and UCDP conflict predictors
+    """Constructs Series of global representations of PRIO and UCDP conflict predictors
 
     Constructs Series of global representations of PRIO and UCDP conflict
     predictors in an image array format. Image representations of the selected
@@ -703,7 +703,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
             cell.
     """
 ### construct_channels
-"""Constructs global parameter layer of multiple specified conflict predictors
+    """Constructs global parameter layer of multiple specified conflict predictors
 
     Constructs global parameter layer of multiple specified conflict predictors
     for use in Construct_Combined_sequence. Takes dataframe of either PRIO or
@@ -731,7 +731,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         value at a particular grid cell.
     """
 ### random_pixel_bounds
-"""Returns range of indices to extract a randomly placed square of size
+    """Returns range of indices to extract a randomly placed square of size
     chuksize in which the specified entry of the overall array is captured
 
     Function returns 4 parameters: i_lower, i_upper, j_lower, j_upper which define
@@ -759,7 +759,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         Upper j index for the random square placed over the targetted event.
     """
 ### random_grid_selection
-"""Extracts conflict image sequence samples for a given monnth.
+    """Extracts conflict image sequence samples for a given monnth.
 
     Produces conflict image sequence samples for each month from an input global
     image sequnce produced using construct_combined_sequence. Takes input image
@@ -809,7 +809,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         chunksize)
     """
 ### full_dataset_h5py
-"""Produces h5py Dataset of conflict image sequences, and the prediction ground truth
+    """Produces h5py Dataset of conflict image sequences, and the prediction ground truth
 
     Uses random_grid_selection to extract conflict image prediction sequences
     and the next step in the sequence (i.e the image to be predicted). The produced
@@ -866,7 +866,7 @@ As the hdf5 dataset is not partitioned into test and validation sets, the datase
         dataset.
     """
 ### construct_dataset
-"""Produces image sequence dataset from input of conflict predictor dataframes
+    """Produces image sequence dataset from input of conflict predictor dataframes
 
     Short pipeline function for construct_combined_sequence, and full_dataset_h5py.
 
