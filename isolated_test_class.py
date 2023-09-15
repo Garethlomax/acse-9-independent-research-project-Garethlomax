@@ -74,7 +74,8 @@ class LSTMunit_t(nn.Module):
 
 
     """
-    def __init__(self, input_channel_no, hidden_channels_no, kernel_size, stride = 1):
+
+    def __init__(self, input_channel_no, hidden_channels_no, kernel_size, stride=1):
         """Constructor method for LSTM
 
         Parameters
@@ -90,18 +91,18 @@ class LSTMunit_t(nn.Module):
             depractated"""
         super(LSTMunit_t, self).__init__()
 
-
-
-
         self.input_channels = input_channel_no
 
         self.output_channels = hidden_channels_no
 
         self.kernel_size = kernel_size
 
-        self.padding = (int((self.kernel_size - 1) / 2 ), int((self.kernel_size - 1) / 2 ))#to ensure output image same dims as input
+        self.padding = (
+            int((self.kernel_size - 1) / 2),
+            int((self.kernel_size - 1) / 2),
+        )  # to ensure output image same dims as input
         # as in conv nowcasting - see references
-        self.stride = stride # for same reasons as above stride must be 1.
+        self.stride = stride  # for same reasons as above stride must be 1.
         """TODO: CHANGE THIS LAYOUT OF CONVOLUTIONAL LAYERS. """
         """ TODO : DEAL WITH BIAS HERE. """
         """ TODO: CAN INCLUDE BIAS IN ONE OF THE CONVOLUTIONS BUT NOT ALL OF THEM - OR COULD INCLUDE IN ALL? """
@@ -109,41 +110,60 @@ class LSTMunit_t(nn.Module):
         """TODO: put correct dimensions of tensor in shape"""
         """TODO: DEFINE THESE SYMBOLS. """
         """TODO: PUT THIS IN CONSTRUCTOR."""
-        self.filter_name_list = ['Wxi', 'Wxf', 'Wxc', 'Wxo','Whi', 'Whf', 'Whc', 'Who']
+        self.filter_name_list = ["Wxi", "Wxf", "Wxc", "Wxo", "Whi", "Whf", "Whc", "Who"]
         # list of concolution instances for each lstm cell step
         # Filters with Wx_ are unbiased, filters with Wh_ are biased.
         # Stored in module dict to track as parameter.
-        self.conv_list = [nn.Conv2d(self.input_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = False) for i in range(4)]
-        self.conv_list = self.conv_list + [nn.Conv2d(self.output_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = True).double() for i in range(4)]
+        self.conv_list = [
+            nn.Conv2d(
+                self.input_channels,
+                self.output_channels,
+                kernel_size=self.kernel_size,
+                stride=self.stride,
+                padding=self.padding,
+                bias=False,
+            )
+            for i in range(4)
+        ]
+        self.conv_list = self.conv_list + [
+            nn.Conv2d(
+                self.output_channels,
+                self.output_channels,
+                kernel_size=self.kernel_size,
+                stride=self.stride,
+                padding=self.padding,
+                bias=True,
+            ).double()
+            for i in range(4)
+        ]
         self.conv_dict = nn.ModuleDict(zip(self.filter_name_list, self.conv_list))
 
-#         self.conv_list = [nn.Conv2d(self.input_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = False) for i in range(4)]
-#         self.conv_list = self.conv_list + [(nn.Conv2d(self.output_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = True)).double() for i in range(4)]
-#         self.conv_list = nn.ModuleList(self.conv_list)
+        #         self.conv_list = [nn.Conv2d(self.input_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = False) for i in range(4)]
+        #         self.conv_list = self.conv_list + [(nn.Conv2d(self.output_channels, self.output_channels, kernel_size =  self.kernel_size, stride = self.stride, padding = self.padding, bias = True)).double() for i in range(4)]
+        #         self.conv_list = nn.ModuleList(self.conv_list)
 
         # of dimensions seq length, hidden layers, height, width
         shape = [1, self.output_channels, 16, 16]
 
         # Wco, Wcf, Wci defined as tensors as are multiplicative, not convolutions
         # Tracked as a parameter to allow differentiability.
-        self.Wco = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
-        self.Wcf = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
-        self.Wci = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
+        self.Wco = nn.Parameter((torch.zeros(shape).double()), requires_grad=True)
+        self.Wcf = nn.Parameter((torch.zeros(shape).double()), requires_grad=True)
+        self.Wci = nn.Parameter((torch.zeros(shape).double()), requires_grad=True)
 
-
-#         self.Wco = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
-#         self.Wcf = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
-#         self.Wci = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
-#         self.Wco.name = "test"
-#         self.Wco = torch.zeros(shape, requires_grad = True).double()
-#         self.Wcf = torch.zeros(shape, requires_grad = True).double()
-#         self.Wci = torch.zeros(shape, requires_grad = True).double()
+        #         self.Wco = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
+        #         self.Wcf = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
+        #         self.Wci = nn.Parameter((torch.zeros(shape).double()), requires_grad = True)
+        #         self.Wco.name = "test"
+        #         self.Wco = torch.zeros(shape, requires_grad = True).double()
+        #         self.Wcf = torch.zeros(shape, requires_grad = True).double()
+        #         self.Wci = torch.zeros(shape, requires_grad = True).double()
 
         # activation functions.
         self.tanh = torch.tanh
-        self.sig  = torch.sigmoid
+        self.sig = torch.sigmoid
 
-#     (1, 6, kernel_size=5, padding=2, stride=1).double()
+    #     (1, 6, kernel_size=5, padding=2, stride=1).double()
     def forward(self, x, h, c):
         """Pytorch module forward method.
 
@@ -178,14 +198,22 @@ class LSTMunit_t(nn.Module):
         """
 
         # Calculates as in Nowcasting Paper. see url for explanation
-        i_t = self.sig(self.conv_dict['Wxi'](x) + self.conv_dict['Whi'](h) + self.Wci * c)
-        f_t = self.sig(self.conv_dict['Wxf'](x) + self.conv_dict['Whf'](h) + self.Wcf * c)
-        c_t = f_t * c + i_t * self.tanh(self.conv_dict['Wxc'](x) + self.conv_dict['Whc'](h))
-        o_t = self.sig(self.conv_dict['Wxo'](x) + self.conv_dict['Who'](h) + self.Wco * c_t)
+        i_t = self.sig(
+            self.conv_dict["Wxi"](x) + self.conv_dict["Whi"](h) + self.Wci * c
+        )
+        f_t = self.sig(
+            self.conv_dict["Wxf"](x) + self.conv_dict["Whf"](h) + self.Wcf * c
+        )
+        c_t = f_t * c + i_t * self.tanh(
+            self.conv_dict["Wxc"](x) + self.conv_dict["Whc"](h)
+        )
+        o_t = self.sig(
+            self.conv_dict["Wxo"](x) + self.conv_dict["Who"](h) + self.Wco * c_t
+        )
         h_t = o_t * self.tanh(c_t)
 
-
         return h_t, c_t
+
 
 class LSTMmain_t(nn.Module):
     """Full ConvLSTM module
@@ -218,7 +246,6 @@ class LSTMmain_t(nn.Module):
 
     """
 
-
     """ collection of units to form encoder/ decoder branches - decide which are which
     need funcitonality to copy in and copy out outputs.
 
@@ -228,7 +255,21 @@ class LSTMmain_t(nn.Module):
     layer_output = [0,1,1]"""
 
     """TODO: DECIDE ON OUTPUT OF HIDDEN CHANNEL LIST """
-    def __init__(self, shape, input_channel_no, hidden_channel_no, kernel_size, layer_output, test_input, copy_bool = False, debug = False, save_outputs = True, decoder = False, second_debug = False):
+
+    def __init__(
+        self,
+        shape,
+        input_channel_no,
+        hidden_channel_no,
+        kernel_size,
+        layer_output,
+        test_input,
+        copy_bool=False,
+        debug=False,
+        save_outputs=True,
+        decoder=False,
+        second_debug=False,
+    ):
         super(LSTMmain_t, self).__init__()
 
         """TODO: USE THIS AS BASIS FOR ENCODER DECODER."""
@@ -247,7 +288,7 @@ class LSTMmain_t(nn.Module):
 
         """specify dimensions of shape - as in channel length ect. figure out once put it in a dataloader"""
 
-        self.layers = len(test_input) #number of layers in the encoder.
+        self.layers = len(test_input)  # number of layers in the encoder.
 
         self.seq_length = shape[1]
 
@@ -262,26 +303,37 @@ class LSTMmain_t(nn.Module):
         self.layer_output = layer_output
 
         # initialise the different conv cells.
-#         self.unit_list = [LSTMunit(input_channel_no, hidden_channel_no, kernel_size) for i in range(self.enc_len)]
+        #         self.unit_list = [LSTMunit(input_channel_no, hidden_channel_no, kernel_size) for i in range(self.enc_len)]
         self.dummy_list = [input_channel_no]
-        self.dummy_list.extend(list(self.test_input))  # allows test input to be an array
-   
+        self.dummy_list.extend(
+            list(self.test_input)
+        )  # allows test input to be an array
+
         if self.debug:
             print("dummy_list:")
             print(self.dummy_list)
 
-#         self.unit_list = nn.ModuleList([(LSTMunit(self.dummy_list[i], self.dummy_list[i+1], kernel_size).double()).cuda() for i in range(len(self.test_input))])
-        self.unit_list = nn.ModuleList([(LSTMunit_t(self.dummy_list[i], self.dummy_list[i+1], kernel_size).double()) for i in range(len(self.test_input))])
+        #         self.unit_list = nn.ModuleList([(LSTMunit(self.dummy_list[i], self.dummy_list[i+1], kernel_size).double()).cuda() for i in range(len(self.test_input))])
+        self.unit_list = nn.ModuleList(
+            [
+                (
+                    LSTMunit_t(
+                        self.dummy_list[i], self.dummy_list[i + 1], kernel_size
+                    ).double()
+                )
+                for i in range(len(self.test_input))
+            ]
+        )
 
         if self.debug:
             print("number of units:")
             print(len(self.unit_list))
-#             print("number of ")
 
-#         self.unit_list = nn.ModuleList(self.unit_list)
+    #             print("number of ")
 
+    #         self.unit_list = nn.ModuleList(self.unit_list)
 
-    def forward(self, x, copy_in = False, copy_out = [False, False, False]):
+    def forward(self, x, copy_in=False, copy_out=[False, False, False]):
         """Forward method of the ConvLSTM
 
         Takes a sequence of image tensors and returns the hidden state output
@@ -315,13 +367,12 @@ class LSTMmain_t(nn.Module):
             encoder LSTM to be copied into decoder LSTM as the copy_in parameter
 
         """
-#     def forward(self, x):
-#         copy_in = False
-#         copy_out = [False, False, False]
+        #     def forward(self, x):
+        #         copy_in = False
+        #         copy_out = [False, False, False]
 
-
-#         print("IS X CUDA?")
-#         print(x.is_cuda)
+        #         print("IS X CUDA?")
+        #         print(x.is_cuda)
         """loop over layers, then over hidden states
 
         copy_in is either False or is [[h,c],[h,c]] ect.
@@ -336,7 +387,7 @@ class LSTMmain_t(nn.Module):
 
         """ TODO: PUT INITIAL ZERO THROUGH THE SYSTEM TO DEFINE H AND C"""
 
-        layer_output = [] # empty list to save each h and c for each step.
+        layer_output = []  # empty list to save each h and c for each step.
         """TODO: DECIDE WHETHER THE ABOVE SHOULD BE ARRAY OR NOT"""
 
         # x is 5th dimensional tensor.
@@ -349,12 +400,13 @@ class LSTMmain_t(nn.Module):
 
         # need to re arrange the outputs.
 
-
         """TODO: SORT OUT H SIZING. """
 
         batch_size = size[0]
         # change this. h should be of dimensions hidden size, hidden size.
-        h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
+        h_shape = list(
+            x.shape[:1] + x.shape[2:]
+        )  # seq is second, we miss it with fancy indexing
         h_shape[1] = self.hidden_chans
         if self.debug:
             print("h_shape:")
@@ -362,79 +414,70 @@ class LSTMmain_t(nn.Module):
 
         # size should be (seq, batch_size, layers, height, weight)
 
-
         empty_start_vectors = []
-
 
         #### new method of copying vectors. copy_bool, assigned during object
         # construction now deals iwth copying in values.
         # copy in is still used to supply the tensor values.
 
-        k = 0 # to count through our input state list.
+        k = 0  # to count through our input state list.
         for i in range(self.layers):
-            if self.copy_bool[i]: # if copy bool is true for this layer
+            if self.copy_bool[i]:  # if copy bool is true for this layer
                 # check purpose of h_shape in below code.
                 empty_start_vectors.append(copy_in[k])
                 # copies in state for that layer
                 """TODO: CHECK IF THIS NEEDS TO BE DETATCHED OR NOT"""
-                k += 1 # iterate through input list.
+                k += 1  # iterate through input list.
 
-            else: # i.e if false
+            else:  # i.e if false
                 assert self.copy_bool[i] == False, "copy_bool arent bools"
 
-                h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
-                h_shape[1] = self.dummy_list[i+1] # check indexing.
-                empty_start_vectors.append([(torch.zeros(h_shape).double()), (torch.zeros(h_shape).double())])
+                h_shape = list(
+                    x.shape[:1] + x.shape[2:]
+                )  # seq is second, we miss it with fancy indexing
+                h_shape[1] = self.dummy_list[i + 1]  # check indexing.
+                empty_start_vectors.append(
+                    [(torch.zeros(h_shape).double()), (torch.zeros(h_shape).double())]
+                )
 
-        del k # clear up k so no spare variables flying about.
+        del k  # clear up k so no spare variables flying about.
 
+        #         for i in range(self.layers):
+        #             """CHANGED: NOW HAS COPY IN COPY OUT BASED ON [[0,0][H,C]] FORMAT"""
+        #             if copy_in == False: # i.e if no copying in occurs then proceed as normal
+        #                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
+        #                 h_shape[1] = self.dummy_list[i+1] # check indexing.
+        # #                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
+        #                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
+        # #             elif copy_in[i] == [0,0]:
+        #             elif isinstance(copy_in[i], list):
 
+        #                 assert (len(copy_in) == self.layers), "Length disparity between layers, copy in format"
 
+        #                 # if no copying in in alternate format
+        #                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
+        #                 h_shape[1] = self.dummy_list[i+1] # check indexing.
+        #                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
 
-#         for i in range(self.layers):
-#             """CHANGED: NOW HAS COPY IN COPY OUT BASED ON [[0,0][H,C]] FORMAT"""
-#             if copy_in == False: # i.e if no copying in occurs then proceed as normal
-#                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
-#                 h_shape[1] = self.dummy_list[i+1] # check indexing.
-# #                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
-#                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
-# #             elif copy_in[i] == [0,0]:
-#             elif isinstance(copy_in[i], list):
+        #             else: # copy in the provided vectors
+        #                 assert (len(copy_in) == self.layers), "Length disparity between layers, copy in format"
 
-#                 assert (len(copy_in) == self.layers), "Length disparity between layers, copy in format"
+        #                 """TODO: DECIDE WHETHER TO CHANGE THIS TO AN ASSERT BASED OFF TYPE OF TENSOR."""
+        #                 empty_start_vectors.append(copy_in[i])
 
-#                 # if no copying in in alternate format
-#                 h_shape = list(x.shape[:1] + x.shape[2:]) # seq is second, we miss it with fancy indexing
-#                 h_shape[1] = self.dummy_list[i+1] # check indexing.
-#                 empty_start_vectors.append([(torch.zeros(h_shape).double()).cuda(), (torch.zeros(h_shape).double()).cuda()])
-
-#             else: # copy in the provided vectors
-#                 assert (len(copy_in) == self.layers), "Length disparity between layers, copy in format"
-
-#                 """TODO: DECIDE WHETHER TO CHANGE THIS TO AN ASSERT BASED OFF TYPE OF TENSOR."""
-#                 empty_start_vectors.append(copy_in[i])
-
-
-
-
-
-#         empty_start_vectors = [[torch.zeros(h_shape), torch.zeros(h_shape)] for i in range(self.layers)]
-
-
+        #         empty_start_vectors = [[torch.zeros(h_shape), torch.zeros(h_shape)] for i in range(self.layers)]
 
         if self.debug:
             for i in empty_start_vectors:
                 print(i[0].shape)
             print(" \n \n \n")
 
-#         for i in range(self.layers):
-#             empty_start_vectors.append([torch.tensor()])
+        #         for i in range(self.layers):
+        #             empty_start_vectors.append([torch.tensor()])
 
         total_outputs = []
 
-
         for i in range(self.layers):
-
 
             layer_output = []
             if self.debug:
@@ -456,9 +499,9 @@ class LSTMmain_t(nn.Module):
 
             """TODO: REVIEW THIS SECTION"""
             """CHANGED: TO ALWAYS CHOOSE H AND C"""
-#             if copy_in == False:
-#                 h, c = empty_start_vectors[i]
-#             else: h, c = copy_in[i]
+            #             if copy_in == False:
+            #                 h, c = empty_start_vectors[i]
+            #             else: h, c = copy_in[i]
 
             h, c = empty_start_vectors[i]
 
@@ -474,7 +517,7 @@ class LSTMmain_t(nn.Module):
                     print("inner loop iteration:")
                     print(j)
                 if self.debug:
-                    print("x dtype is:" , x.dtype)
+                    print("x dtype is:", x.dtype)
                 # for each step in the sequence
                 # put x through
                 # i.e put through each x value at a given time.
@@ -483,20 +526,20 @@ class LSTMmain_t(nn.Module):
 
                 if self.debug:
                     print("inner loop size:")
-                    print(x[:,j].shape)
+                    print(x[:, j].shape)
                     print("h size:")
                     print(h.shape)
 
-                h, c = self.unit_list[i](x[:,j], h, c)
+                h, c = self.unit_list[i](x[:, j], h, c)
 
                 # this is record for each output in given layer.
                 # this depends whether copying out it enabld
-#                 i
+                #                 i
                 layer_output.append([h, c])
 
             """TODO: IMPLEMENT THIS"""
-#             if self.save_all_outputs[i]:
-#                 total_outputs.append(layer_outputs[:,0]) # saves h from each of the layer outputs
+            #             if self.save_all_outputs[i]:
+            #                 total_outputs.append(layer_outputs[:,0]) # saves h from each of the layer outputs
 
             # output
             """OUTSIDE OF SEQ LOOP"""
@@ -507,41 +550,44 @@ class LSTMmain_t(nn.Module):
                 # saves last state and memory which can be subsequently unrolled.
                 # when used in an encoder decoder format.
             """removed else statement"""
-#             else:
-#                 internal_outputs.append([0,0])
-                # saves null variable so we can check whats being sent out.
+            #             else:
+            #                 internal_outputs.append([0,0])
+            # saves null variable so we can check whats being sent out.
 
-
-            h_output = [i[0] for i in layer_output] #layer_output[:,0] # take h from each timestep.
+            h_output = [
+                i[0] for i in layer_output
+            ]  # layer_output[:,0] # take h from each timestep.
             if self.debug:
                 print("h_output is of size:")
                 print(h_output[0].shape)
-
 
             """TODO: REVIEW IF 1 IS THE CORRECT AXIS TO CONCATENATE THE VECTORS ALONG"""
             # we now use h as the predictor input to the other layers.
             """TODO: STACK TENSORS ALONG NEW AXIS. """
 
-
-            x = torch.stack(h_output,0)
+            x = torch.stack(h_output, 0)
             x = torch.transpose(x, 0, 1)
             if self.second_debug:
-                print("x shape in LSTM main:" , x.shape)
+                print("x shape in LSTM main:", x.shape)
             if self.debug:
                 print("x reshaped dimensions:")
                 print(x.shape)
 
-#         x = torch.zeros(x.shape)
-#         x.requires_grad = True
-#
-#        if len(internal_outputs) == 0:
-#            internal_outputs = [torch.zeros(h_shape, dtype = torch.double, requires_grad = True) for i in range(3)]
-#
-#        internal_outputs = torch.stack(internal_outputs,0) # CHANGED
-        return x , internal_outputs # return new h in tensor form. do we need to cudify this stuff
+        #         x = torch.zeros(x.shape)
+        #         x.requires_grad = True
+        #
+        #        if len(internal_outputs) == 0:
+        #            internal_outputs = [torch.zeros(h_shape, dtype = torch.double, requires_grad = True) for i in range(3)]
+        #
+        #        internal_outputs = torch.stack(internal_outputs,0) # CHANGED
+        return (
+            x,
+            internal_outputs,
+        )  # return new h in tensor form. do we need to cudify this stuff
 
     def initialise(self):
         """put through zeros to start everything"""
+
 
 class LSTMencdec_onestep_t(nn.Module):
     """Class to allow easy construction of ConvLSTM Encoder-Decoder models
@@ -568,7 +614,7 @@ class LSTMencdec_onestep_t(nn.Module):
 
     """
 
-    def __init__(self, structure, input_channels, kernel_size = 5, debug = False):
+    def __init__(self, structure, input_channels, kernel_size=5, debug=False):
         """Constructor for LSTMencdec
 
         Constructs two intances of LSTMmain, one encoder and one decoder. passes
@@ -599,21 +645,27 @@ class LSTMencdec_onestep_t(nn.Module):
             Switch to turn off debugging print statements.
         """
 
-
         super(LSTMencdec_onestep_t, self).__init__()
-        assert len(structure.shape) == 2, "structure should be a 2d numpy array with two rows"
+        assert (
+            len(structure.shape) == 2
+        ), "structure should be a 2d numpy array with two rows"
 
         self.debug = debug
 
         # shape of input
-        shape = [1,10,3,16,16]
+        shape = [1, 10, 3, 16, 16]
 
         self.structure = structure
         self.input_channels = input_channels
         self.kernel_size = kernel_size
 
         # extract arguments for encoder and decoder constructors from structure
-        self.enc_shape, self.dec_shape, self.enc_copy_out, self.dec_copy_in = self.input_test()
+        (
+            self.enc_shape,
+            self.dec_shape,
+            self.enc_copy_out,
+            self.dec_copy_in,
+        ) = self.input_test()
 
         if self.debug:
             print("enc_shape, dec_shape, enc_copy_out, dec_copy_in:")
@@ -622,20 +674,32 @@ class LSTMencdec_onestep_t(nn.Module):
             print(self.enc_copy_out)
             print(self.dec_copy_in)
 
-
-
-
         # why does this have +1 at third input and decoder hasnt??????
 
-        #initialise encoder and decoder structures
-        self.encoder = LSTMmain_t(shape, self.input_channels, len(self.enc_shape)+1, self.kernel_size, layer_output = self.enc_copy_out, test_input = self.enc_shape, copy_bool = [False for k in range(len(self.enc_shape))]  )
+        # initialise encoder and decoder structures
+        self.encoder = LSTMmain_t(
+            shape,
+            self.input_channels,
+            len(self.enc_shape) + 1,
+            self.kernel_size,
+            layer_output=self.enc_copy_out,
+            test_input=self.enc_shape,
+            copy_bool=[False for k in range(len(self.enc_shape))],
+        )
 
         # now one step in sequence
-        shape = [1,1,1,64,64]
+        shape = [1, 1, 1, 64, 64]
 
-        self.decoder = LSTMmain_t(shape, self.enc_shape[-1], len(self.dec_shape), self.kernel_size, layer_output = 1, test_input = self.dec_shape, copy_bool = self.dec_copy_in,  second_debug = False)
-
-
+        self.decoder = LSTMmain_t(
+            shape,
+            self.enc_shape[-1],
+            len(self.dec_shape),
+            self.kernel_size,
+            layer_output=1,
+            test_input=self.dec_shape,
+            copy_bool=self.dec_copy_in,
+            second_debug=False,
+        )
 
         # initialise encoder and decoder network
 
@@ -664,9 +728,9 @@ class LSTMencdec_onestep_t(nn.Module):
         copy_grid = []
         # finds dimensions of the encoder
         enc_layer = self.structure[0]
-        enc_shape = enc_layer[enc_layer!=0]
+        enc_shape = enc_layer[enc_layer != 0]
         dec_layer = self.structure[1]
-        dec_shape = dec_layer[dec_layer!=0]
+        dec_shape = dec_layer[dec_layer != 0]
 
         # find vertical overlaps between non zero elements
         for i in range(len(enc_layer)):
@@ -677,10 +741,9 @@ class LSTMencdec_onestep_t(nn.Module):
             else:
                 copy_grid.append(False)
 
+        enc_overlap = copy_grid[: len(enc_layer) - 1]
 
-        enc_overlap = copy_grid[:len(enc_layer)-1]
-
-        num_dec_zeros = len(dec_layer[dec_layer==0])
+        num_dec_zeros = len(dec_layer[dec_layer == 0])
 
         dec_overlap = copy_grid[num_dec_zeros:]
 
@@ -705,13 +768,14 @@ class LSTMencdec_onestep_t(nn.Module):
             channels, height, width)
         """
         # pass inputs to encoder
-        x, out_states = self.encoder(x, copy_in = False, copy_out = self.enc_copy_out)
+        x, out_states = self.encoder(x, copy_in=False, copy_out=self.enc_copy_out)
 
         # select last input of encoder for conditional encoder decoder model.
-        x = x[:,-1:,:,:,:]
+        x = x[:, -1:, :, :, :]
 
-        res, _ = self.decoder(x, copy_in = out_states, copy_out = [False, False, False,False, False])
+        res, _ = self.decoder(
+            x, copy_in=out_states, copy_out=[False, False, False, False, False]
+        )
         if self.debug:
             print("FINISHING ONE PASS")
         return res
-

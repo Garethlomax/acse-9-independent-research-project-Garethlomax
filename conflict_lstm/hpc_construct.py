@@ -7,11 +7,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib.cm as cm
-#import cartopy.crs as ccrs
-#import cartopy.feature as cfeature
+
+# import cartopy.crs as ccrs
+# import cartopy.feature as cfeature
 import h5py
 import random
 from sklearn.neighbors import LocalOutlierFactor
+
 
 def date_to_int_list(date):
     """Transforms string date into list
@@ -32,11 +34,12 @@ def date_to_int_list(date):
     m = int(date[5:7])
     d = int(date[8:10])
 
-#    print("date is:")
-#    print(y, " ",m, " ", d)
-    return [y,m,d]
+    #    print("date is:")
+    #    print(y, " ",m, " ", d)
+    return [y, m, d]
 
-def monotonic_date(date, baseline = [1989, 1, 1]):
+
+def monotonic_date(date, baseline=[1989, 1, 1]):
     """Returns the number of months elapsed between date and baseline
 
     Parameters
@@ -57,8 +60,7 @@ def monotonic_date(date, baseline = [1989, 1, 1]):
     return date[1] - baseline[1] + ((date[0] - baseline[0]) * 12)
 
 
-
-def construct_layer(dataframe, key, prio_key = "gid", debug = False):
+def construct_layer(dataframe, key, prio_key="gid", debug=False):
     """Constructs single global parameter map of PRIO encoded variables
 
     Takes input dataframe of either PRIO or UCDP data. Produces 360 x 720 array
@@ -88,18 +90,24 @@ def construct_layer(dataframe, key, prio_key = "gid", debug = False):
     """
 
     # PRIO grid is 360 * 720
-    array = np.zeros(360*720)
+    array = np.zeros(360 * 720)
     prio_grid = dataframe[prio_key]
     for i in range(len(prio_grid)):
         j = prio_grid.iloc[i] - 1
         array[j] += dataframe[key].iloc[i]
-    array.resize(360,720)
+    array.resize(360, 720)
     return array
 
 
-
-
-def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, key_list_ucdp, start = [1989, 1,1], stop = [2014,1,1], verbose = False):
+def construct_combined_sequence(
+    dataframe_prio,
+    dataframe_ucdp,
+    key_list_prio,
+    key_list_ucdp,
+    start=[1989, 1, 1],
+    stop=[2014, 1, 1],
+    verbose=False,
+):
     """Constructs Series of global representations of PRIO and UCDP conflict predictors
 
     Constructs Series of global representations of PRIO and UCDP conflict
@@ -138,36 +146,43 @@ def construct_combined_sequence(dataframe_prio, dataframe_ucdp, key_list_prio, k
             specified conflict predictor. Each pixel corresponds to one PRIO grid
             cell.
     """
-    #stop  = '2014-01-01'
+    # stop  = '2014-01-01'
     num_month = monotonic_date(stop, start)
     comb_channel_len = len(key_list_prio) + len(key_list_ucdp)
 
-    array = np.zeros((num_month, comb_channel_len, 360,720))
+    array = np.zeros((num_month, comb_channel_len, 360, 720))
     stop = date_to_int_list(stop)
 
     if verbose:
-            print(num_month)
-            print(comb_channel_len)
+        print(num_month)
+        print(comb_channel_len)
 
     month = 0
-    extract_month = monotonic_date('2012-01-01')
+    extract_month = monotonic_date("2012-01-01")
     for i in range(start[0], stop[0]):
-        for j in range(12): # for each month
+        for j in range(12):  # for each month
             # now fill in selected channels as requried.
 
-            array[month][:len(key_list_ucdp)] = construct_channels(dataframe_ucdp[dataframe_ucdp.mon_month == extract_month], key_list = key_list_ucdp, prio_key = "priogrid_gid")
-            array[month][len(key_list_ucdp):] = construct_channels(dataframe_prio[dataframe_prio.year == i], key_list = key_list_prio, prio_key = 'gid')
+            array[month][: len(key_list_ucdp)] = construct_channels(
+                dataframe_ucdp[dataframe_ucdp.mon_month == extract_month],
+                key_list=key_list_ucdp,
+                prio_key="priogrid_gid",
+            )
+            array[month][len(key_list_ucdp) :] = construct_channels(
+                dataframe_prio[dataframe_prio.year == i],
+                key_list=key_list_prio,
+                prio_key="gid",
+            )
             if verbose:
                 print(extract_month)
 
             month += 1
-            extract_month +=1
+            extract_month += 1
     del month
     return array
 
 
-
-def construct_channels(dataframe, key_list, prio_key = "gid"):
+def construct_channels(dataframe, key_list, prio_key="gid"):
     """Constructs global parameter layer of multiple specified conflict predictors
 
     Constructs global parameter layer of multiple specified conflict predictors
@@ -197,12 +212,11 @@ def construct_channels(dataframe, key_list, prio_key = "gid"):
     """
     array = np.zeros((len(key_list), 360, 720))
     for i, keys in enumerate(key_list):
-        array[i] = construct_layer(dataframe, key = keys, prio_key = prio_key)
+        array[i] = construct_layer(dataframe, key=keys, prio_key=prio_key)
     return array
 
 
-
-def date_column(dataframe, baseline = [1989,1,1], date_start_key = "date_start"):
+def date_column(dataframe, baseline=[1989, 1, 1], date_start_key="date_start"):
     """Simple function to add monotonically increasing month to Dataframe
 
     Adds column entitled 'mon_month' to UCDP dataframes encoding the time ellapsed
@@ -226,17 +240,16 @@ def date_column(dataframe, baseline = [1989,1,1], date_start_key = "date_start")
     new_col = np.array([monotonic_date(string_date) for string_date in vals])
     dataframe["mon_month"] = new_col
 
+
 def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
     # this is for saving the default 360:720 file to extract sequences from
     f = h5py.File("{}.hdf5".format(filename), "w")
 
-    f.create_dataset("data_combined", data = data_array)
+    f.create_dataset("data_combined", data=data_array)
 
     f.close()
 
-
-
-    csv = open(filename + "_config.csv", 'w')
+    csv = open(filename + "_config.csv", "w")
     csv.write("Included data UCDP:\n")
     for key in key_list_ucdp:
         csv.write(key + "\n")
@@ -247,12 +260,7 @@ def h5py_conversion(data_array, filename, key_list_ucdp, key_list_prio):
     csv.close()
 
 
-
-
-
-
-
-def raster_test(input_data, chunk_size = 16):
+def raster_test(input_data, chunk_size=16):
     # to overcome edge sizes can make selection large if we just reject the training data for outside africa
     # although we do not necessarily need to do this
     # i.e expand box and allow less sampled box to sampel others more frequently.
@@ -264,13 +272,15 @@ def raster_test(input_data, chunk_size = 16):
     height = input_data.shape[-2]
     width = input_data.shape[-1]
     for i in range(height - chunk_size + 1):
-        for j in range(width - chunk_size+1):
-            print(input_data[:,i:i+chunk_size,j:j + chunk_size])
+        for j in range(width - chunk_size + 1):
+            print(input_data[:, i : i + chunk_size, j : j + chunk_size])
             print(".")
+
 
 #    plt.imshow(input_data)
 
-def raster_selection(input_data, chunk_size = 16):
+
+def raster_selection(input_data, chunk_size=16):
     # here input_data is sequence step.
     # data should be of dimensions seq, channels, height, width.
     # to overcome edge sizes can make selection large if we just reject the training data for outside africa
@@ -285,13 +295,13 @@ def raster_selection(input_data, chunk_size = 16):
     width = input_data.shape[-1]
     # this is not efficient.
     for i in range(height - chunk_size + 1):
-        for j in range(width - chunk_size+1):
-            input_data[0][i:i+chunk_size,j:j + chunk_size]
+        for j in range(width - chunk_size + 1):
+            input_data[0][i : i + chunk_size, j : j + chunk_size]
 
     plt.imshow(input_data)
 
 
-def random_pixel_bounds(i, j, chunk_size = 16):
+def random_pixel_bounds(i, j, chunk_size=16):
     """Returns range of indices to extract a randomly placed square of size
     chuksize in which the specified entry of the overall array is captured
 
@@ -321,10 +331,10 @@ def random_pixel_bounds(i, j, chunk_size = 16):
     """
     # returns the bounds of the image to select with a random pixel size.
 
-    height = random.randint(0, chunk_size-1)
-    width = random.randint(0, chunk_size-1)
+    height = random.randint(0, chunk_size - 1)
+    width = random.randint(0, chunk_size - 1)
     # this randomly generates a subsample of the image in which the chosen pixel
-    #is located randomly in the cut out image.
+    # is located randomly in the cut out image.
     i_lower = i - height
     i_upper = i + (chunk_size - height)
 
@@ -334,7 +344,7 @@ def random_pixel_bounds(i, j, chunk_size = 16):
     return [i_lower, i_upper, j_lower, j_upper]
 
 
-def random_selection(image, i, j, chunk_size = 16):
+def random_selection(image, i, j, chunk_size=16):
     """Quick method of visualising randomly selected array portion
 
     Uses random_pixel_bounds to select a portion of an array.
@@ -351,11 +361,22 @@ def random_selection(image, i, j, chunk_size = 16):
         Edge size of image to be extracted.
     """
 
-    i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(i, j, chunk_size = chunk_size)
+    i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(
+        i, j, chunk_size=chunk_size
+    )
 
-    print(image[i_lower:i_upper,j_lower:j_upper])
+    print(image[i_lower:i_upper, j_lower:j_upper])
 
-def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, cluster = False, min_events = 0, debug = False):
+
+def random_grid_selection(
+    image,
+    sequence_step,
+    chunk_size=16,
+    draws=5,
+    cluster=False,
+    min_events=0,
+    debug=False,
+):
     """Extracts conflict image sequence samples for a given monnth.
 
     Produces conflict image sequence samples for each month from an input global
@@ -406,30 +427,29 @@ def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, clust
         chunksize)
     """
     if debug:
-        print("Image shape is:" , image.shape)
+        print("Image shape is:", image.shape)
 
     # image is seq, channels, height, width
-    assert sequence_step > 10, ("This function selects the datapoints from this test set that contain"
-                                "a conflict event and then selects predictor data from the 10 preceding steps"
-                                " as a result i > 10 must be true")
+    assert sequence_step > 10, (
+        "This function selects the datapoints from this test set that contain"
+        "a conflict event and then selects predictor data from the 10 preceding steps"
+        " as a result i > 10 must be true"
+    )
     # locate events occuring in the first channel
     y, x = np.where(image[sequence_step][0] >= 1)
 
-
     if cluster:
 
-        X = np.hstack((x.reshape((-1,1)), y.reshape((-1,1))))
+        X = np.hstack((x.reshape((-1, 1)), y.reshape((-1, 1))))
 
-        clf = LocalOutlierFactor(n_neighbors=5, contamination= 0.05)
+        clf = LocalOutlierFactor(n_neighbors=5, contamination=0.05)
         y_pred = clf.fit_predict(X)
-        bools = (y_pred == 1)
+        bools = y_pred == 1
         non_outs = X[bools]
-        x = non_outs[:,0]
-        y = non_outs[:,1]
-
+        x = non_outs[:, 0]
+        y = non_outs[:, 1]
 
         # correct this but answer is this shape
-
 
     if debug:
         print(x.shape)
@@ -437,48 +457,53 @@ def random_grid_selection(image, sequence_step, chunk_size= 16, draws = 5, clust
     truth_list = []
     predictor_list = []
 
-    for i,j in zip(y, x): # now over sites where fatalities have occured
+    for i, j in zip(y, x):  # now over sites where fatalities have occured
         for _ in range(draws):
-            i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(i, j, chunk_size=chunk_size)
+            i_lower, i_upper, j_lower, j_upper = random_pixel_bounds(
+                i, j, chunk_size=chunk_size
+            )
 
-            truth = image[sequence_step][0,i_lower:i_upper,j_lower:j_upper]
-            predictors = image[sequence_step-10:sequence_step, :,i_lower:i_upper,j_lower:j_upper]
+            truth = image[sequence_step][0, i_lower:i_upper, j_lower:j_upper]
+            predictors = image[
+                sequence_step - 10 : sequence_step, :, i_lower:i_upper, j_lower:j_upper
+            ]
 
-            if (np.count_nonzero(predictors[:,0]) >= min_events):
+            if np.count_nonzero(predictors[:, 0]) >= min_events:
                 truth_list.append(truth)
                 predictor_list.append(predictors)
 
     # finally we combine the selected arrays.
-    return np.stack(predictor_list, axis= 0), np.stack(truth_list, axis = 0)
+    return np.stack(predictor_list, axis=0), np.stack(truth_list, axis=0)
 
 
-def full_dataset_numpy(image, chunk_size = 16, draws = 5, min_events = 0, debug = False):
+def full_dataset_numpy(image, chunk_size=16, draws=5, min_events=0, debug=False):
     # image is seq, channels, height, width
     predictor_list = []
     truth_list = []
     for i in range(11, len(image)):
-        t1, t2 = random_grid_selection(image, i, min_events = min_events)
+        t1, t2 = random_grid_selection(image, i, min_events=min_events)
         predictor_list.append(t1)
         truth_list.append(t2)
 
-    truth_np = np.concatenate(truth_list, axis = 0)
-    predictor_np = np.concatenate(predictor_list, axis =0)
+    truth_np = np.concatenate(truth_list, axis=0)
+    predictor_np = np.concatenate(predictor_list, axis=0)
     return predictor_np, truth_np
+
 
 def quick_dataset(data, name):
     f = h5py.File(name + ".hdf5", "w")
-    f.create_dataset("main", data = data)
-#    f.create_dataset("truth", data = truth)
+    f.create_dataset("main", data=data)
+    #    f.create_dataset("truth", data = truth)
     f.close()
 
 
+# data = pd.read_csv("data/ged191.csv")
 
-
-#data = pd.read_csv("data/ged191.csv")
 
 def debug_func1(dataframe, month):
     a = dataframe[dataframe.mon_month == month]
-    print(len(a[a.best >0]))
+    print(len(a[a.best > 0]))
+
 
 def binary_event_column(dataframe):
     """Dummy function to add column of 1s
@@ -486,12 +511,22 @@ def binary_event_column(dataframe):
     new_col = np.ones(len(dataframe))
     dataframe["binary_event"] = new_col
 
+
 def nan_to_one(dataframe, key):
     """Replaces NaNs in dataframe column with 0s"""
     dataframe[key] = dataframe[key].fillna(0)
 
 
-def full_dataset_h5py(image, filename, key_list_prio, key_list_ucdp, chunk_size = 16, draws = 5, min_events = 25, debug = False):
+def full_dataset_h5py(
+    image,
+    filename,
+    key_list_prio,
+    key_list_ucdp,
+    chunk_size=16,
+    draws=5,
+    min_events=25,
+    debug=False,
+):
     """Produces h5py Dataset of conflict image sequences, and the prediction ground truth
 
     Uses random_grid_selection to extract conflict image prediction sequences
@@ -525,44 +560,45 @@ def full_dataset_h5py(image, filename, key_list_prio, key_list_ucdp, chunk_size 
 
     """
 
-    with h5py.File(filename + ".hdf5", 'w') as f:
+    with h5py.File(filename + ".hdf5", "w") as f:
         for i in range(11, len(image)):
             print(i)
-            t1, t2 = random_grid_selection(image, i, min_events = min_events)
+            t1, t2 = random_grid_selection(image, i, min_events=min_events)
             if i == 11:
                 # creat h5py file at first step.
-                f.create_dataset('predictor', data= t1, maxshape=(None,None, None, None,None)) # compression="gzip", chunks=True, taken out
-                f.create_dataset("truth", data= t2, maxshape=(None,None,None))
+                f.create_dataset(
+                    "predictor", data=t1, maxshape=(None, None, None, None, None)
+                )  # compression="gzip", chunks=True, taken out
+                f.create_dataset("truth", data=t2, maxshape=(None, None, None))
 
             else:
                 # expand the dataset depending on how many samples we extract
                 # that meet thresholds. This is a random process so cannot
                 # predefine file size.
-                f["predictor"].resize((f["predictor"].shape[0] + t1.shape[0]), axis = 0) # expand dataset
-                f["truth"].resize((f["truth"].shape[0] + t2.shape[0]), axis = 0)
+                f["predictor"].resize(
+                    (f["predictor"].shape[0] + t1.shape[0]), axis=0
+                )  # expand dataset
+                f["truth"].resize((f["truth"].shape[0] + t2.shape[0]), axis=0)
 
-                f["predictor"][-t1.shape[0]:] = t1 # place new data in expanded dataset
-                f["truth"][-t2.shape[0]:] = t2
+                f["predictor"][
+                    -t1.shape[0] :
+                ] = t1  # place new data in expanded dataset
+                f["truth"][-t2.shape[0] :] = t2
 
         f["predictor"].attrs.create("key_prio", np.string_(key_list_prio))
         f["truth"].attrs.create("key_ucdp", np.string_(key_list_ucdp))
 
 
-
-
-
 def data_set_analysis(dataset):
     dat = np.zeros(len(dataset["predictor"]))
     for i in range(len(dataset["predictor"])):
-        dat[i] = len(np.where(f["predictor"][i][:,0] > 0)[0])
+        dat[i] = len(np.where(f["predictor"][i][:, 0] > 0)[0])
         if (i % 1000) == 0:
             print(i)
     return dat
 
 
-
-
-def find_avg_lazy_load(data, div = 10000):
+def find_avg_lazy_load(data, div=10000):
     """Extracts average and std from produced hdf5 datasets
 
     Uses hdf5 lazy loading to subdivide produced image sequence datasets and extract
@@ -592,40 +628,44 @@ def find_avg_lazy_load(data, div = 10000):
     avg = np.zeros(channel_num)
     std = np.zeros_like(avg)
 
-
     for i in range(channel_num):
         # batching as cant fit into ram
 
         batch_avg = 0
         batch_std = 0
-        for j in range(int(len(predictor)/div)):
+        for j in range(int(len(predictor) / div)):
 
-            batch_avg += np.sum(predictor[j * div: (j+1)*div,:,i])
+            batch_avg += np.sum(predictor[j * div : (j + 1) * div, :, i])
 
-            batch_std += np.sum(predictor[j * div: (j+1)*div,:,i] * predictor[j * div: (j+1)*div,:,i])
+            batch_std += np.sum(
+                predictor[j * div : (j + 1) * div, :, i]
+                * predictor[j * div : (j + 1) * div, :, i]
+            )
 
-
-
-
-        batch_avg += np.sum(predictor[int(len(predictor)/div)*div: len(predictor),:,i])
-        batch_std += np.sum(predictor[int(len(predictor)/div)*div: len(predictor),:,i]*predictor[int(len(predictor)/div)*div: len(predictor),:,i])
+        batch_avg += np.sum(
+            predictor[int(len(predictor) / div) * div : len(predictor), :, i]
+        )
+        batch_std += np.sum(
+            predictor[int(len(predictor) / div) * div : len(predictor), :, i]
+            * predictor[int(len(predictor) / div) * div : len(predictor), :, i]
+        )
 
         sing_chan_shape = np.array(predictor.shape)
         sing_chan_shape[2] = 1
         batch_avg /= np.prod(sing_chan_shape)
         batch_std /= np.prod(sing_chan_shape)
 
-        batch_std = np.sqrt(batch_std - batch_avg**2)
+        batch_std = np.sqrt(batch_std - batch_avg ** 2)
 
         avg[i] = batch_avg
         std[i] = batch_std
-
 
     return avg, std
 
 
 def mod_dif(module_1, module_2):
     print(set(dir(module_1)) - set(dir(module_2)))
+
 
 def mod_dif_full(m1, m2, m3):
     m1 = set(dir(m1))
@@ -639,8 +679,10 @@ def lists_overlap(a, b):
         if i in b:
             print(i)
 
+
 def mod_overlap(module_1, module_2):
     lists_overlap(dir(module_1), dir(module_2))
+
 
 def index_return(ind, x_dim, y_dim):
 
@@ -648,7 +690,8 @@ def index_return(ind, x_dim, y_dim):
     y_out = int(ind / x_dim)
     return y_out, x_out
 
-def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
+
+def coord_to_grid(long, lat, x_dim=720, y_dim=360):
     """Returns grid Coordinates for given longitude, lattitude
 
     Used for converting longitude and lattitude of conflict events into grid cells
@@ -672,36 +715,52 @@ def coord_to_grid(long, lat, x_dim= 720, y_dim = 360):
     lat: int
         Lattitudonal cell index of given location
         """
-    lat_dummy = np.arange(-90,90,0.5)
-    long_dummy = np.arange(-180,180,0.5)
+    lat_dummy = np.arange(-90, 90, 0.5)
+    long_dummy = np.arange(-180, 180, 0.5)
 
     round_long = round(long)
     round_lat = round(lat)
 
     long = np.where(long_dummy == round_long)
     lat = np.where(lat_dummy == round_lat)
-    lat  = lat[0][0]
+    lat = lat[0][0]
     long = long[0][0]
     return long, lat
-
 
 
 def round(i):
     """for rounding - always rounding down."""
     j = int(i)
     k = i - j
-    if k>0.5: # if above i.5 orrigionally
+    if k > 0.5:  # if above i.5 orrigionally
         j += 0.5
     return j
 
-def regional_selection(data_ucdp, north = 37.32, south = -34.5115, east = 51.2752, west = -17.3113):
+
+def regional_selection(
+    data_ucdp, north=37.32, south=-34.5115, east=51.2752, west=-17.3113
+):
     """Select a box of UCDP data from dataframe based on longitude and lattitude
     """
-    data_ucdp = data_ucdp[(data_ucdp.latitude >= south) & (data_ucdp.latitude <= north) & (data_ucdp.longitude >= west) & (east >= data_ucdp.longitude)]
+    data_ucdp = data_ucdp[
+        (data_ucdp.latitude >= south)
+        & (data_ucdp.latitude <= north)
+        & (data_ucdp.longitude >= west)
+        & (east >= data_ucdp.longitude)
+    ]
 
     return data_ucdp
 
-def construct_dataset(filename,data_prio, data_ucdp, key_list_prio, key_list_ucdp, start = [2012,1,1], stop = '2014,1,1'):
+
+def construct_dataset(
+    filename,
+    data_prio,
+    data_ucdp,
+    key_list_prio,
+    key_list_ucdp,
+    start=[2012, 1, 1],
+    stop="2014,1,1",
+):
     """Produces image sequence dataset from input of conflict predictor dataframes
 
     Short pipeline function for construct_combined_sequence, and full_dataset_h5py.
@@ -723,6 +782,13 @@ def construct_dataset(filename,data_prio, data_ucdp, key_list_prio, key_list_ucd
     stop: str
         stop date of data to be selected in "yyyy-mm-dd" format.
     """
-    test_set = construct_combined_sequence(data_prio, data_ucdp, key_list_prio=key_list_prio, key_list_ucdp=key_list_ucdp, start=[2012,1,1], stop = '2014-01-01')
-    test_set[:,0][test_set[:,0] > 0] = 1
-    full_dataset_h5py(test_set, filename,key_list_prio, key_list_ucdp)
+    test_set = construct_combined_sequence(
+        data_prio,
+        data_ucdp,
+        key_list_prio=key_list_prio,
+        key_list_ucdp=key_list_ucdp,
+        start=[2012, 1, 1],
+        stop="2014-01-01",
+    )
+    test_set[:, 0][test_set[:, 0] > 0] = 1
+    full_dataset_h5py(test_set, filename, key_list_prio, key_list_ucdp)

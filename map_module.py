@@ -15,7 +15,8 @@ import h5py
 import random
 from sklearn.neighbors import LocalOutlierFactor
 
-def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_colour = 'black'):
+
+def map_plot_func(test_array, vmin=0, vmax=1, colour="viridis", border_colour="black"):
     """Plots PlateCarree map projection of given PRIO grid global representation
 
     Plots heatmap of given global array of PRIO grid encoded predictors. Plotted
@@ -45,22 +46,26 @@ def map_plot_func(test_array, vmin = 0 , vmax = 1, colour = 'viridis', border_co
     plt.figure()
     ax = plt.axes(projection=ccrs.PlateCarree())
 
+    y = np.arange(-90, 90, 0.5)
+    x = np.arange(-180, 180, 0.5)
+    xx, yy = np.meshgrid(x, y)
 
-    y = np.arange(-90,90,0.5)
-    x = np.arange(-180,180,0.5)
-    xx, yy = np.meshgrid(x,y)
+    ax.coastlines(color=border_colour)
+    ax.add_feature(cfeature.BORDERS, edgecolor="black")
 
-
-
-    ax.coastlines(color = border_colour)
-    ax.add_feature(cfeature.BORDERS, edgecolor='black')
-
-    #plot box around africa
+    # plot box around africa
     loc_b = [north, north, south, south, north]
     loc_a = [west, east, east, west, west]
-    ax.plot(loc_a, loc_b, transform = ccrs.PlateCarree())
+    ax.plot(loc_a, loc_b, transform=ccrs.PlateCarree())
 
-    cmap = cm.get_cmap(name = colour)
-    ax.pcolormesh(xx, yy, test_array,vmin = vmin, vmax = vmax, transform = ccrs.PlateCarree(), cmap = cmap)
+    cmap = cm.get_cmap(name=colour)
+    ax.pcolormesh(
+        xx,
+        yy,
+        test_array,
+        vmin=vmin,
+        vmax=vmax,
+        transform=ccrs.PlateCarree(),
+        cmap=cmap,
+    )
     plt.show()
-
