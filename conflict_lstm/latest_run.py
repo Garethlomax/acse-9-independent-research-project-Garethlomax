@@ -24,7 +24,9 @@ from .hpc_construct import *
 
 torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.enabled = True
-device = "cuda"
+# device = "cuda"
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 from sklearn.metrics import roc_curve, roc_auc_score, average_precision_score
 import pandas as pd
@@ -1105,6 +1107,7 @@ def wrapper_full(
     """
     f = open(name + ".csv", "w")
     # open csv file for saving
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # construct model and send to GPU(s)
     if torch.cuda.device_count() > 1:
